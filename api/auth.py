@@ -46,8 +46,8 @@ def create_token(role: Role, region: str | None = None, community_id: str | None
         "role": role.value,
         "region": region,
         "community_id": community_id,
-        "iat": dt.datetime.utcnow(),
-        "exp": dt.datetime.utcnow() + dt.timedelta(days=TOKEN_TTL_DAYS),
+        "iat": dt.datetime.now(dt.timezone.utc),
+        "exp": dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=TOKEN_TTL_DAYS),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 

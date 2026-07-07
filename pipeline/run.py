@@ -34,7 +34,7 @@ from pipeline.state import filter_new_or_changed, load_state, save_state
 def run() -> dict:
     start = time.time()
     log: dict = {
-        "run_at": dt.datetime.utcnow().isoformat(),
+        "run_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "bronze": {},
         "silver": {},
         "gold": {},
@@ -43,13 +43,32 @@ def run() -> dict:
 
     # ---- Bronze (incremental) ----
     all_files = discover_source_files()
+    #get the files and hash that currently exist
     state = load_state()
-    to_process, new_state = filter_new_or_changed(all_files, state)
+    #determine new to be processed and ones to update
+    to_process, new_state, file_status = filter_new_or_changed(all_files, state)
+    #overwrite files that need to be updated
     files_needing_work = {t: p for t, p in to_process.items() if p}
     log["bronze"] = run_bronze(files_needing_work)
     for table, paths in to_process.items():
         log["bronze"].setdefault(table, {"files_processed": 0, "rows_in": 0})
         log["bronze"][table]["files_skipped_unchanged"] = len(all_files[table]) - len(paths)
+        log["bronze"][table]["files_new"] = file_status[table]["new"]
+        log["bronze"][table]["files_updated_content"] = file_status[table]["updated"]
+        if file_status[table]["updated"]:
+            # A previously-ingested filename came back with different content --
+            # a retroactive revision of data that may have already been reported
+            # on, not just a new month landing. Flagged distinctly rather than
+            # silently folded into "processed some files this run".
+            log["anomalies"].append(
+                {
+                    "table": table,
+                    "reason": "source_file_content_revised",
+                    "rows_affected": len(file_status[table]["updated"]),
+                    "severity": "high",
+                    "action": "raise_to_client",
+                }
+            )
     save_state(new_state)
 
     # ---- Silver ----
@@ -130,12 +149,13 @@ def _write_markdown_log(log: dict) -> None:
         "",
         "## Bronze (incremental ingestion)",
         "",
-        "| Table | Files processed | Files skipped (unchanged) | Rows ingested |",
-        "|---|---|---|---|",
+        "| Table | New files | Revised files (content changed) | Skipped (unchanged) | Rows ingested |",
+        "|---|---|---|---|---|",
     ]
     for table, stats in log["bronze"].items():
         lines.append(
-            f"| {table} | {stats.get('files_processed', 0)} | {stats.get('files_skipped_unchanged', 0)} | {stats.get('rows_in', 0)} |"
+            f"| {table} | {len(stats.get('files_new', []))} | {len(stats.get('files_updated_content', []))} "
+            f"| {stats.get('files_skipped_unchanged', 0)} | {stats.get('rows_in', 0)} |"
         )
 
     lines += ["", "## Silver (cleaning)", "", "| Table | Rows in | Rows out | Rows dropped | Rows flagged |", "|---|---|---|---|---|"]

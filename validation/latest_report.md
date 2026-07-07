@@ -1,7 +1,7 @@
 # Pinewood Data Validation Report
 
-Generated: 2026-07-07T17:43:19.470110 UTC  
-Based on pipeline run: 2026-07-07T17:43:17.548422 UTC
+Generated: 2026-07-07T19:19:50.713390+00:00 UTC  
+Based on pipeline run: 2026-07-07T19:19:43.180649+00:00 UTC
 
 **36/36 checks passed.**
 

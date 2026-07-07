@@ -1,11 +1,4 @@
 """Bronze layer: land raw CSVs as-is, one Parquet file per source CSV.
-
-Nothing about the business content changes here -- only ingestion metadata is
-added (_source_file, _ingested_at, _row_hash) so every row can be traced back
-to exactly the file it came from. Schema drift (e.g. the one-off
-mobility_status column in pcc_residents_2025_04.csv) is handled for free:
-each source file keeps its own columns, and Silver is responsible for
-reconciling column differences across files.
 """
 import datetime as dt
 from pathlib import Path
@@ -13,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline.config import BRONZE_DIR, RAW_DATA_DIR, SOURCE_TABLES
-from pipeline.utils import row_hash
 
 
 def _bronze_path_for(table: str, csv_path: Path) -> Path:
@@ -23,8 +15,7 @@ def _bronze_path_for(table: str, csv_path: Path) -> Path:
 def load_one_file(table: str, csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path, dtype=str)
     df["_source_file"] = csv_path.name
-    df["_ingested_at"] = dt.datetime.utcnow().isoformat()
-    df["_row_hash"] = row_hash(df, [c for c in df.columns if not c.startswith("_")])
+    df["_ingested_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     return df
 
 

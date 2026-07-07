@@ -27,7 +27,7 @@ def run() -> dict:
 
     failures = [c for c in checks if c["status"] == "fail"]
     report = {
-        "generated_at": dt.datetime.utcnow().isoformat(),
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "pipeline_run_at": pipeline_log["run_at"],
         "checks_run": len(checks),
         "checks_passed": len(checks) - len(failures),

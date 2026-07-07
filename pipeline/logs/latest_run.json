@@ -1,45 +1,61 @@
 {
-  "run_at": "2026-07-07T17:43:17.548422",
+  "run_at": "2026-07-07T19:19:43.180649+00:00",
   "bronze": {
     "pcc_residents": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "pcc_incidents": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "pcc_care_history": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "yardi_units": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "yardi_leases": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "adp_shifts": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "gbp_reviews": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     },
     "hubspot_leads": {
       "files_processed": 0,
       "rows_in": 0,
-      "files_skipped_unchanged": 6
+      "files_skipped_unchanged": 6,
+      "files_new": [],
+      "files_updated_content": []
     }
   },
   "silver": {
@@ -163,5 +179,5 @@
       "action": "quarantine"
     }
   ],
-  "duration_seconds": 1.44
+  "duration_seconds": 1.35
 }

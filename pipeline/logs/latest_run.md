@@ -1,20 +1,20 @@
 # Pipeline Run Report
 
-Run at: 2026-07-07T17:43:17.548422 UTC  
-Duration: 1.44s
+Run at: 2026-07-07T19:19:43.180649+00:00 UTC  
+Duration: 1.35s
 
 ## Bronze (incremental ingestion)
 
-| Table | Files processed | Files skipped (unchanged) | Rows ingested |
-|---|---|---|---|
-| pcc_residents | 0 | 6 | 0 |
-| pcc_incidents | 0 | 6 | 0 |
-| pcc_care_history | 0 | 6 | 0 |
-| yardi_units | 0 | 6 | 0 |
-| yardi_leases | 0 | 6 | 0 |
-| adp_shifts | 0 | 6 | 0 |
-| gbp_reviews | 0 | 6 | 0 |
-| hubspot_leads | 0 | 6 | 0 |
+| Table | New files | Revised files (content changed) | Skipped (unchanged) | Rows ingested |
+|---|---|---|---|---|
+| pcc_residents | 0 | 0 | 6 | 0 |
+| pcc_incidents | 0 | 0 | 6 | 0 |
+| pcc_care_history | 0 | 0 | 6 | 0 |
+| yardi_units | 0 | 0 | 6 | 0 |
+| yardi_leases | 0 | 0 | 6 | 0 |
+| adp_shifts | 0 | 0 | 6 | 0 |
+| gbp_reviews | 0 | 0 | 6 | 0 |
+| hubspot_leads | 0 | 0 | 6 | 0 |
 
 ## Silver (cleaning)
 
