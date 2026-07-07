@@ -1,0 +1,391 @@
+{
+  "generated_at": "2026-07-07T17:43:19.470110",
+  "pipeline_run_at": "2026-07-07T17:43:17.548422",
+  "checks_run": 36,
+  "checks_passed": 36,
+  "checks_failed": 0,
+  "checks": [
+    {
+      "check": "row_count_reconciliation[pcc_residents]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 4152,
+        "rows_dropped": 3326,
+        "expected_out": 826,
+        "actual_out": 826
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[pcc_incidents]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 411,
+        "rows_dropped": 0,
+        "expected_out": 411,
+        "actual_out": 411
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[pcc_care_history]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 303,
+        "rows_dropped": 0,
+        "expected_out": 303,
+        "actual_out": 303
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[yardi_units]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 5490,
+        "rows_dropped": 30,
+        "expected_out": 5460,
+        "actual_out": 5460
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[yardi_leases]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 346,
+        "rows_dropped": 44,
+        "expected_out": 302,
+        "actual_out": 302
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[adp_shifts]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 68071,
+        "rows_dropped": 0,
+        "expected_out": 68071,
+        "actual_out": 68071
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[gbp_reviews]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 424,
+        "rows_dropped": 0,
+        "expected_out": 424,
+        "actual_out": 424
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "row_count_reconciliation[hubspot_leads]",
+      "status": "pass",
+      "detail": {
+        "rows_in": 830,
+        "rows_dropped": 2,
+        "expected_out": 828,
+        "actual_out": 828
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "aggregate_reconciliation[total_lease_revenue]",
+      "status": "pass",
+      "detail": {
+        "silver_total": 1753467.0,
+        "gold_total": 1753467.0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "aggregate_reconciliation[total_shift_hours]",
+      "status": "pass",
+      "detail": {
+        "silver_total": 565188.0,
+        "gold_total": 565188.0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "aggregate_reconciliation[total_resident_days]",
+      "status": "pass",
+      "detail": {
+        "expected_from_dim_resident": 543015,
+        "actual_in_fact_resident_day": 543015
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "no_overlapping_leases_per_resident",
+      "status": "pass",
+      "detail": {
+        "residents_with_overlap": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "no_negative_or_over_100_occupancy",
+      "status": "pass",
+      "detail": {
+        "violating_rows": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "no_discharge_before_admit",
+      "status": "pass",
+      "detail": {
+        "resident_ids": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "no_future_dated_events",
+      "status": "pass",
+      "detail": {
+        "violations_by_column": {},
+        "as_of_date": "2025-06-30"
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "acuity_scores_within_range",
+      "status": "pass",
+      "detail": {
+        "resident_ids": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "incident_severity_within_1_5",
+      "status": "pass",
+      "detail": {
+        "incident_ids": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "review_rating_within_1_5",
+      "status": "pass",
+      "detail": {
+        "review_ids": []
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_lease.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_labor.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_incident.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_review.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_lead.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_resident_day.community_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_lease.resident_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_incident.resident_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_resident_day.resident_id]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_community.community_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_resident.resident_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_unit.unit_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_employee.employee_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[fact_lease.lease_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[fact_labor.shift_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[fact_incident.incident_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[fact_review.review_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[fact_lead.lead_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    }
+  ],
+  "pipeline_anomalies": [
+    {
+      "table": "pcc_residents",
+      "reason": "acuity_score_out_of_range",
+      "rows_affected": 3,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "pcc_residents",
+      "reason": "future_dated_discharge",
+      "rows_affected": 2,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "rows_affected": 30,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "hubspot_leads",
+      "reason": "duplicate_lead_id_conflicting_data",
+      "rows_affected": 2,
+      "severity": "medium",
+      "action": "quarantine"
+    }
+  ]
+}

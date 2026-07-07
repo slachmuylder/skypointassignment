@@ -1,0 +1,167 @@
+{
+  "run_at": "2026-07-07T17:43:17.548422",
+  "bronze": {
+    "pcc_residents": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "pcc_incidents": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "pcc_care_history": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "yardi_units": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "yardi_leases": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "adp_shifts": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "gbp_reviews": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    },
+    "hubspot_leads": {
+      "files_processed": 0,
+      "rows_in": 0,
+      "files_skipped_unchanged": 6
+    }
+  },
+  "silver": {
+    "pcc_residents": {
+      "rows_in": 4152,
+      "rows_out": 826,
+      "rows_dropped": 3326,
+      "rows_flagged": 5
+    },
+    "pcc_incidents": {
+      "rows_in": 411,
+      "rows_out": 411,
+      "rows_dropped": 0,
+      "rows_flagged": 0
+    },
+    "pcc_care_history": {
+      "rows_in": 303,
+      "rows_out": 303,
+      "rows_dropped": 0,
+      "rows_flagged": 0
+    },
+    "yardi_units": {
+      "rows_in": 5490,
+      "rows_out": 5460,
+      "rows_dropped": 30,
+      "rows_flagged": 30
+    },
+    "yardi_leases": {
+      "rows_in": 346,
+      "rows_out": 302,
+      "rows_dropped": 44,
+      "rows_flagged": 0
+    },
+    "adp_shifts": {
+      "rows_in": 68071,
+      "rows_out": 68071,
+      "rows_dropped": 0,
+      "rows_flagged": 0
+    },
+    "gbp_reviews": {
+      "rows_in": 424,
+      "rows_out": 424,
+      "rows_dropped": 0,
+      "rows_flagged": 0
+    },
+    "hubspot_leads": {
+      "rows_in": 830,
+      "rows_out": 828,
+      "rows_dropped": 2,
+      "rows_flagged": 2
+    }
+  },
+  "gold": {
+    "dim_community": {
+      "rows_out": 14
+    },
+    "dim_resident": {
+      "rows_out": 823
+    },
+    "dim_resident_care_level": {
+      "rows_out": 841
+    },
+    "dim_unit": {
+      "rows_out": 910
+    },
+    "dim_employee": {
+      "rows_out": 617
+    },
+    "dim_date": {
+      "rows_out": 181
+    },
+    "fact_resident_day": {
+      "rows_out": 543015
+    },
+    "fact_acuity_snapshot": {
+      "rows_out": 823
+    },
+    "fact_lease": {
+      "rows_out": 302
+    },
+    "fact_labor": {
+      "rows_out": 68071
+    },
+    "fact_incident": {
+      "rows_out": 411
+    },
+    "fact_review": {
+      "rows_out": 424
+    },
+    "fact_lead": {
+      "rows_out": 828
+    }
+  },
+  "anomalies": [
+    {
+      "table": "pcc_residents",
+      "reason": "acuity_score_out_of_range",
+      "rows_affected": 3,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "pcc_residents",
+      "reason": "future_dated_discharge",
+      "rows_affected": 2,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "rows_affected": 30,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "hubspot_leads",
+      "reason": "duplicate_lead_id_conflicting_data",
+      "rows_affected": 2,
+      "severity": "medium",
+      "action": "quarantine"
+    }
+  ],
+  "duration_seconds": 1.44
+}

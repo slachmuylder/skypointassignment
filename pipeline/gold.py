@@ -1,0 +1,210 @@
+"""Gold layer: star-schema mart tables built from Silver.
+
+Grain of each table is documented in sql/README.md -- this module is the
+Python-side implementation of that same design (SCD2 for care level, the
+resident-day fact that the required occupancy/labor/incident views are all
+built from, etc). Output is one Parquet file per dimension/fact table.
+"""
+import pandas as pd
+
+from pipeline.config import COMMUNITY_STATE, GOLD_DIR, STATE_REGION, VALID_COMMUNITY_IDS, data_as_of_date, data_window
+
+
+def _latest_per_resident(residents: pd.DataFrame) -> pd.DataFrame:
+    """pcc_residents is a monthly snapshot; take each resident's most recent
+    known state as their Type-1 'current' attributes."""
+    df = residents.copy()
+    df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
+    return (
+        df.sort_values("_month")
+        .drop_duplicates(subset="resident_id", keep="last")
+        .drop(columns=["_month"])
+    )
+
+
+def build_dim_community() -> pd.DataFrame:
+    rows = [
+        {"community_id": cid, "state": COMMUNITY_STATE[cid], "region": STATE_REGION[COMMUNITY_STATE[cid]]}
+        for cid in sorted(VALID_COMMUNITY_IDS)
+    ]
+    return pd.DataFrame(rows)
+
+
+def build_dim_resident(residents: pd.DataFrame, care_level_scd: pd.DataFrame) -> pd.DataFrame:
+    current = _latest_per_resident(residents)
+    current_level = care_level_scd[care_level_scd["is_current"]][["resident_id", "care_level"]]
+    dim = current.merge(current_level, on="resident_id", how="left", suffixes=("_snapshot", ""))
+    dim["care_level"] = dim["care_level"].fillna(dim["care_level_snapshot"])
+    return dim[
+        [
+            "resident_id", "community_id", "first_name", "last_name", "dob", "gender",
+            "admit_date", "discharge_date", "care_level", "acuity_score",
+        ]
+    ]
+
+
+def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd.DataFrame) -> pd.DataFrame:
+    """SCD Type 2: a resident who changes care level gets a new row with
+    effective/end dates rather than an overwrite. Built primarily from
+    pcc_care_history (transactional change events); residents with no
+    recorded change event get a single open-ended version seeded from their
+    admit_date + snapshot care_level."""
+    events = care_history.dropna(subset=["change_date"]).sort_values(["resident_id", "change_date"])
+    rows = []
+    residents_with_history = set(events["resident_id"].unique())
+
+    for resident_id, grp in events.groupby("resident_id"):
+        grp = grp.reset_index(drop=True)
+        for i, row in grp.iterrows():
+            end_date = grp.loc[i + 1, "change_date"] if i + 1 < len(grp) else None
+            rows.append(
+                {
+                    "resident_id": resident_id,
+                    "care_level": row["new_level"],
+                    "effective_date": row["change_date"],
+                    "end_date": end_date,
+                    "is_current": end_date is None,
+                    "change_reason": row["reason"],
+                }
+            )
+
+    current_snapshot = _latest_per_resident(residents)
+    no_history = current_snapshot[~current_snapshot["resident_id"].isin(residents_with_history)]
+    for _, row in no_history.iterrows():
+        if pd.isna(row["care_level"]):
+            continue
+        rows.append(
+            {
+                "resident_id": row["resident_id"],
+                "care_level": row["care_level"],
+                "effective_date": row["admit_date"],
+                "end_date": None,
+                "is_current": True,
+                "change_reason": "Admission (no recorded change events in window)",
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def build_fact_acuity_snapshot(residents: pd.DataFrame) -> pd.DataFrame:
+    """Periodic snapshot fact, grain: one row per resident per distinct
+    acuity reading, dated to the last month that reading was confirmed in.
+
+    dim_resident only keeps each resident's latest (Type-1) acuity_score, so
+    it can't answer "did this resident's acuity jump by 2+ points within 90
+    days" -- that requires the history, which is what this table is for.
+    Built from the already-deduped Silver pcc_residents table: distinct rows
+    per resident there correspond to distinct (admit/discharge/care_level/
+    acuity_score) states, each carrying the _source_file of the last month
+    that state was observed."""
+    df = residents.dropna(subset=["acuity_score"]).copy()
+    df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
+    df["snapshot_date"] = pd.to_datetime(df["_month"], format="%Y_%m") + pd.offsets.MonthEnd(0)
+    return df[["resident_id", "snapshot_date", "acuity_score"]].sort_values(["resident_id", "snapshot_date"])
+
+
+def build_dim_unit(units: pd.DataFrame) -> pd.DataFrame:
+    df = units.copy()
+    df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
+    latest = df.sort_values("_month").drop_duplicates(subset="unit_id", keep="last")
+    return latest[["unit_id", "community_id", "unit_type", "monthly_rent"]].drop(columns=[], errors="ignore")
+
+
+def build_dim_employee(shifts: pd.DataFrame) -> pd.DataFrame:
+    df = shifts.sort_values("shift_date").drop_duplicates(subset="employee_id", keep="last")
+    return df[["employee_id", "role", "community_id"]].rename(columns={"role": "latest_role", "community_id": "latest_community_id"})
+
+
+def build_dim_date(start: str, end: str) -> pd.DataFrame:
+    dates = pd.date_range(start, end, freq="D")
+    return pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "year": dates.year,
+            "month": dates.month,
+            "day": dates.day,
+            "month_name": dates.strftime("%B"),
+            "quarter": dates.quarter,
+            "day_of_week": dates.strftime("%A"),
+        }
+    )
+
+
+def build_fact_resident_day(residents: pd.DataFrame, care_level_scd: pd.DataFrame) -> pd.DataFrame:
+    """Grain: one row per resident per calendar day they were active
+    (admit_date <= day <= discharge_date, or day <= today if still resident).
+    This is the base fact that occupancy, labor-cost-per-resident-day, and
+    incident-rate-per-100-resident-days are all computed against.
+
+    Built as a single vectorized DuckDB query (spine of resident x day via
+    generate_series, joined to the SCD2 care-level range) -- a row-by-row
+    Python loop over ~800k resident-days took 2+ minutes; this takes under a
+    second."""
+    import duckdb
+
+    current = _latest_per_resident(residents)[
+        ["resident_id", "community_id", "admit_date", "discharge_date"]
+    ].dropna(subset=["admit_date"]).copy()
+    as_of = data_as_of_date()
+    current["stop_date"] = current["discharge_date"].fillna(as_of)
+    current = current[current["stop_date"] >= current["admit_date"]]
+
+    scd = care_level_scd.copy()
+    scd["end_date"] = scd["end_date"].fillna("2200-01-01")
+
+    return duckdb.sql(
+        """
+        SELECT
+            c.resident_id,
+            c.community_id,
+            CAST(d.date AS VARCHAR) AS date,
+            scd.care_level
+        FROM current c
+        CROSS JOIN LATERAL UNNEST(
+            generate_series(c.admit_date::DATE, c.stop_date::DATE, INTERVAL 1 DAY)
+        ) AS d(date)
+        LEFT JOIN scd
+            ON scd.resident_id = c.resident_id
+            AND d.date >= scd.effective_date::DATE
+            AND d.date < scd.end_date::DATE
+        """
+    ).df()
+
+
+def build_fact_lease(leases: pd.DataFrame) -> pd.DataFrame:
+    return leases[
+        ["lease_id", "resident_id", "unit_id", "community_id", "move_in_date", "move_out_date", "move_out_reason", "monthly_rate"]
+    ].copy()
+
+
+def build_fact_labor(shifts: pd.DataFrame) -> pd.DataFrame:
+    df = shifts.copy()
+    df["labor_cost"] = df["hours_worked"] * df["hourly_rate"]
+    return df[["shift_id", "community_id", "employee_id", "role", "shift_date", "hours_worked", "hourly_rate", "labor_cost"]]
+
+
+def build_fact_incident(incidents: pd.DataFrame) -> pd.DataFrame:
+    return incidents[["incident_id", "resident_id", "community_id", "incident_date", "incident_type", "severity", "reported_by"]].copy()
+
+
+def build_fact_review(reviews: pd.DataFrame) -> pd.DataFrame:
+    df = reviews.copy()
+    df["has_response"] = df["response_text"].notna()
+    return df[["review_id", "community_id", "review_date", "rating", "has_response", "responded_at"]]
+
+
+def build_fact_lead(leads: pd.DataFrame) -> pd.DataFrame:
+    return leads[
+        ["lead_id", "community_id", "lead_source", "created_date", "tour_date", "deposit_date", "move_in_date", "status", "lost_reason"]
+    ].copy()
+
+
+def write_gold_table(df: pd.DataFrame, name: str) -> int:
+    df = df.copy()
+    for col in df.columns:
+        if col in ("date", "dob") or col.endswith("_date"):
+            df[col] = pd.to_datetime(df[col]).dt.date
+    GOLD_DIR.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(GOLD_DIR / f"{name}.parquet", index=False)
+    return len(df)

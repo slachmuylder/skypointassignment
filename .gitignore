@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+pipeline/data/bronze/
+pipeline/data/silver/
+pipeline/data/gold/
+pipeline/data/_pipeline_state.parquet
+.pytest_cache/
