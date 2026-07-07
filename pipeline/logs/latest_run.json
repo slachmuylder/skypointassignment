@@ -1,60 +1,116 @@
 {
-  "run_at": "2026-07-07T19:19:43.180649+00:00",
+  "run_at": "2026-07-07T20:02:10.613309+00:00",
   "bronze": {
     "pcc_residents": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 4152,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "pcc_residents_2025_01.csv",
+        "pcc_residents_2025_02.csv",
+        "pcc_residents_2025_03.csv",
+        "pcc_residents_2025_04.csv",
+        "pcc_residents_2025_05.csv",
+        "pcc_residents_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "pcc_incidents": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 411,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "pcc_incidents_2025_01.csv",
+        "pcc_incidents_2025_02.csv",
+        "pcc_incidents_2025_03.csv",
+        "pcc_incidents_2025_04.csv",
+        "pcc_incidents_2025_05.csv",
+        "pcc_incidents_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "pcc_care_history": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 303,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "pcc_care_history_2025_01.csv",
+        "pcc_care_history_2025_02.csv",
+        "pcc_care_history_2025_03.csv",
+        "pcc_care_history_2025_04.csv",
+        "pcc_care_history_2025_05.csv",
+        "pcc_care_history_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "yardi_units": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 5490,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "yardi_units_2025_01.csv",
+        "yardi_units_2025_02.csv",
+        "yardi_units_2025_03.csv",
+        "yardi_units_2025_04.csv",
+        "yardi_units_2025_05.csv",
+        "yardi_units_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "yardi_leases": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 346,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "yardi_leases_2025_01.csv",
+        "yardi_leases_2025_02.csv",
+        "yardi_leases_2025_03.csv",
+        "yardi_leases_2025_04.csv",
+        "yardi_leases_2025_05.csv",
+        "yardi_leases_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "adp_shifts": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 68071,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "adp_shifts_2025_01.csv",
+        "adp_shifts_2025_02.csv",
+        "adp_shifts_2025_03.csv",
+        "adp_shifts_2025_04.csv",
+        "adp_shifts_2025_05.csv",
+        "adp_shifts_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "gbp_reviews": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 424,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "gbp_reviews_2025_01.csv",
+        "gbp_reviews_2025_02.csv",
+        "gbp_reviews_2025_03.csv",
+        "gbp_reviews_2025_04.csv",
+        "gbp_reviews_2025_05.csv",
+        "gbp_reviews_2025_06.csv"
+      ],
       "files_updated_content": []
     },
     "hubspot_leads": {
-      "files_processed": 0,
-      "rows_in": 0,
-      "files_skipped_unchanged": 6,
-      "files_new": [],
+      "files_processed": 6,
+      "rows_in": 830,
+      "files_skipped_unchanged": 0,
+      "files_new": [
+        "hubspot_leads_2025_01.csv",
+        "hubspot_leads_2025_02.csv",
+        "hubspot_leads_2025_03.csv",
+        "hubspot_leads_2025_04.csv",
+        "hubspot_leads_2025_05.csv",
+        "hubspot_leads_2025_06.csv"
+      ],
       "files_updated_content": []
     }
   },
@@ -179,5 +235,5 @@
       "action": "quarantine"
     }
   ],
-  "duration_seconds": 1.35
+  "duration_seconds": 1.8
 }

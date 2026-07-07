@@ -36,6 +36,9 @@ def run_bronze(files_to_process: dict[str, list[Path]]) -> dict:
 
 
 def discover_source_files() -> dict[str, list[Path]]:
+    """Files are stored with YYYY_MM in the filename, so we can discover the 
+    reporting window by inspection of the filenames. Returns a sorted dict
+    of files available"""
     result = {}
     for table, pattern in SOURCE_TABLES.items():
         result[table] = sorted(RAW_DATA_DIR.glob(pattern))

@@ -36,15 +36,6 @@ def filter_new_or_changed(
 ) -> tuple[dict[str, list[Path]], dict[str, str], dict[str, dict[str, list[str]]]]:
     """Returns (files that need reprocessing, updated full state dict,
     per-table breakdown of *why* each file needs reprocessing).
-
-    "Needs reprocessing" covers two different situations that are worth
-    distinguishing even though both are handled identically by Bronze:
-    a brand-new filename never seen before, vs. a previously-ingested
-    filename whose content has since changed (e.g. a source system
-    re-delivering a corrected export under the same name) -- the latter is a
-    retroactive revision of data that may have already been reported on, and
-    is surfaced as a distinct anomaly rather than folded silently into
-    "processed some files this run".
     """
     to_process: dict[str, list[Path]] = {}
     new_state = dict(state)

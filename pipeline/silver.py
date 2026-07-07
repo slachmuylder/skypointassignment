@@ -3,18 +3,17 @@
 Each function takes the concatenated Bronze rows for one source table and
 returns a cleaned DataFrame plus a `rejects` DataFrame (rows quarantined for a
 business-rule violation, e.g. an out-of-range acuity score or a phantom
-community_id). Rejected rows are never silently dropped -- they are written
-out separately so the validation report / run log can surface them.
-"""
-import pandas as pd
+community_id). Rejected rows are are written out separately."""
 
+import pandas as pd
+from pipeline.columns import COMMUNITY_ID, RESIDENT_ID
 from pipeline.config import ACUITY_MAX, ACUITY_MIN, CARE_LEVEL_MAP, VALID_COMMUNITY_IDS, data_as_of_date
 from pipeline.utils import parse_mixed_date
 
 BUSINESS_COLS = {
-    "pcc_residents": ["resident_id", "community_id", "admit_date", "discharge_date", "care_level", "acuity_score"],
+    "pcc_residents": [RESIDENT_ID, COMMUNITY_ID, "admit_date", "discharge_date", "care_level", "acuity_score"],
     "pcc_incidents": ["incident_id"],
-    "pcc_care_history": ["resident_id", "change_date", "new_level"],
+    "pcc_care_history": [RESIDENT_ID, "change_date", "new_level"],
     "yardi_units": ["unit_id", "snapshot_date"],
     "yardi_leases": ["lease_id"],
     "adp_shifts": ["shift_id"],
@@ -24,6 +23,7 @@ BUSINESS_COLS = {
 
 
 def _normalize_care_level(series: pd.Series) -> pd.Series:
+    #Handles where care levels are recorded inconsistently
     return series.str.strip().str.lower().map(CARE_LEVEL_MAP)
 
 
@@ -39,10 +39,8 @@ def _dedupe_by_business_key(df: pd.DataFrame, table: str) -> pd.DataFrame:
 
 
 def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # Normalize BEFORE deduping: the same resident's unchanged month-to-month
-    # state can be written with different raw formats (03/19/2024 vs
-    # 2024-03-19, "Independent" vs "IL") -- deduping on raw strings would
-    # treat those as different states and fail to collapse them.
+    # Normalize BEFORE deduping since some of the columns are part of the 
+    # business key
     df = df.copy()
     df["dob"] = parse_mixed_date(df["dob"])
     df["admit_date"] = parse_mixed_date(df["admit_date"])
@@ -57,7 +55,7 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     # whenever this pipeline happens to run.
     as_of = data_as_of_date()
     bad_acuity = ~df["acuity_score"].between(ACUITY_MIN, ACUITY_MAX)
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     bad_discharge = df["discharge_date"].notna() & (df["discharge_date"] > as_of)
 
     # unknown_community_id is structural -- there's no coherent place to put
@@ -88,7 +86,7 @@ def clean_pcc_incidents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = _dedupe_by_business_key(df, "pcc_incidents")
     df["incident_date"] = parse_mixed_date(df["incident_date"])
     df["severity"] = pd.to_numeric(df["severity"], errors="coerce")
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     rejects = df[bad_community].copy()
     if not rejects.empty:
         rejects["reject_reason"] = "unknown_community_id"
@@ -110,7 +108,7 @@ def clean_yardi_units(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = _dedupe_by_business_key(df, "yardi_units")
     df["snapshot_date"] = parse_mixed_date(df["snapshot_date"])
     df["monthly_rent"] = pd.to_numeric(df["monthly_rent"], errors="coerce")
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     rejects = df[bad_community].copy()
     if not rejects.empty:
         rejects["reject_reason"] = "unknown_community_id"
@@ -122,7 +120,7 @@ def clean_yardi_leases(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df["move_in_date"] = parse_mixed_date(df["move_in_date"])
     df["move_out_date"] = parse_mixed_date(df["move_out_date"])
     df["monthly_rate"] = pd.to_numeric(df["monthly_rate"], errors="coerce")
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     rejects = df[bad_community].copy()
     if not rejects.empty:
         rejects["reject_reason"] = "unknown_community_id"
@@ -150,7 +148,7 @@ def clean_adp_shifts(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df["shift_date"] = parse_mixed_date(df["shift_date"])
     df["hours_worked"] = pd.to_numeric(df["hours_worked"], errors="coerce")
     df["hourly_rate"] = _resolve_hourly_rate(df)
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     bad_rate = df["hourly_rate"].isna()
     is_reject = bad_community | bad_rate
     rejects = df[is_reject].copy()
@@ -167,7 +165,7 @@ def clean_gbp_reviews(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df["review_date"] = parse_mixed_date(df["review_date"])
     df["responded_at"] = parse_mixed_date(df["responded_at"])
     df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     rejects = df[bad_community].copy()
     if not rejects.empty:
         rejects["reject_reason"] = "unknown_community_id"
@@ -190,7 +188,7 @@ def clean_hubspot_leads(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     for col in ["created_date", "tour_date", "deposit_date", "move_in_date"]:
         df[col] = parse_mixed_date(df[col])
 
-    bad_community = ~df["community_id"].isin(VALID_COMMUNITY_IDS)
+    bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     community_rejects = df[bad_community].copy()
     if not community_rejects.empty:
         community_rejects["reject_reason"] = "unknown_community_id"

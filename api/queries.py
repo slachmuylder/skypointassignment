@@ -5,11 +5,12 @@ as a SQL filter -- callers never pass raw client input straight into a query.
 """
 import duckdb
 
+from pipeline.columns import COMMUNITY_ID
 from pipeline.config import GOLD_DIR
 
 
 def _community_filter(community_ids: list[str] | None, alias: str = "") -> tuple[str, list]:
-    col = f"{alias}.community_id" if alias else "community_id"
+    col = f"{alias}.{COMMUNITY_ID}" if alias else COMMUNITY_ID
     if community_ids is None:
         return "TRUE", []
     placeholders = ",".join(["?"] * len(community_ids))

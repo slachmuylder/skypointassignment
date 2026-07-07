@@ -13,6 +13,7 @@ import duckdb
 from fastapi import Depends, HTTPException, status
 
 from api.auth import Role, get_claims
+from pipeline.columns import COMMUNITY_ID
 from pipeline.config import GOLD_DIR
 
 _DIM_COMMUNITY = GOLD_DIR / "dim_community.parquet"
@@ -20,7 +21,7 @@ _DIM_COMMUNITY = GOLD_DIR / "dim_community.parquet"
 
 def _communities_in_region(region: str) -> set[str]:
     df = duckdb.sql(f"SELECT community_id FROM '{_DIM_COMMUNITY}' WHERE region = ?", params=[region]).df()
-    return set(df["community_id"])
+    return set(df[COMMUNITY_ID])
 
 
 def _granted_communities(claims: dict) -> set[str] | None:
