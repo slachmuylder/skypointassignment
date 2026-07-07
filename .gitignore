@@ -7,3 +7,4 @@ pipeline/data/silver/
 pipeline/data/gold/
 pipeline/data/_pipeline_state.parquet
 .pytest_cache/
+session-notes/
