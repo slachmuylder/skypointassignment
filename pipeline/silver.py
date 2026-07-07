@@ -55,14 +55,6 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     bad_discharge = df["discharge_date"].notna() & (df["discharge_date"] > as_of)
 
-    # unknown_community_id is structural -- there's no coherent place to put
-    # that resident in the model, so the whole row is quarantined. Bad
-    # acuity_score / future-dated discharge_date are field-level problems on
-    # an otherwise-valid resident: quarantining the whole row would orphan
-    # every fact table that references them (their incidents, leases, etc.)
-    # for a data-quality issue in one unrelated column. Log both to rejects
-    # for the anomaly report, but only actually drop the community_id case;
-    # for the other two, null out just the bad field and keep the resident.
     rejects = df[bad_acuity | bad_community | bad_discharge].copy()
     if not rejects.empty:
         def reason(i):
@@ -182,10 +174,7 @@ def clean_gbp_reviews(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def clean_hubspot_leads(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # lead_id should be unique. A confirmed anomaly: HL385264 appears twice
-    # with materially different data (different community, Lost vs Won) --
-    # a genuine ID collision, not a re-export of the same lead needing the
-    # usual re-ingestion dedup. Must be detected BEFORE the generic
+    # lead_id should be unique. Must be detected BEFORE the generic
     # drop_duplicates-by-key step below, which would otherwise silently
     # collapse the collision down to one arbitrary row.
     colliding_ids = df.loc[df["lead_id"].duplicated(keep=False), "lead_id"].unique()
@@ -194,8 +183,10 @@ def clean_hubspot_leads(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     collisions["reject_reason"] = "duplicate_lead_id_conflicting_data"
 
     df = _dedupe_by_business_key(df[~is_collision], "hubspot_leads")
-    for col in ["created_date", "tour_date", "deposit_date", "move_in_date"]:
-        df[col] = parse_mixed_date(df[col])
+    df["created_date"] = parse_mixed_date(df["created_date"])
+    df["tour_date"] = parse_mixed_date(df["tour_date"])
+    df["deposit_date"] = parse_mixed_date(df["deposit_date"])
+    df["move_in_date"] = parse_mixed_date(df["move_in_date"])
 
     bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     community_rejects = df[bad_community].copy()

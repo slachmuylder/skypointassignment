@@ -241,10 +241,14 @@ def referential_integrity() -> list[dict]:
 
 
 def primary_key_uniqueness() -> list[dict]:
+    """key is a single column name, or a list of column names for a
+    composite key (e.g. dim_resident_care_level's SCD2 rows are keyed by
+    resident_id + effective_date, not resident_id alone)."""
     results = []
-    pk_map = {
+    pk_map: dict[str, str | list[str]] = {
         "dim_community": "community_id",
         "dim_resident": "resident_id",
+        "dim_resident_care_level": ["resident_id", "effective_date"],
         "dim_unit": "unit_id",
         "dim_employee": "employee_id",
         "fact_lease": "lease_id",
@@ -257,9 +261,10 @@ def primary_key_uniqueness() -> list[dict]:
         df = _read(GOLD_DIR, table)
         if df.empty:
             continue
-        dupes = df[df[key].duplicated()]
+        dupes = df[df.duplicated(subset=key)]
+        key_label = "+".join(key) if isinstance(key, list) else key
         results.append(
-            _result(f"primary_key_uniqueness[{table}.{key}]", dupes.empty, {"duplicate_count": len(dupes)}, severity="high", action="fix_in_pipeline")
+            _result(f"primary_key_uniqueness[{table}.{key_label}]", dupes.empty, {"duplicate_count": len(dupes)}, severity="high", action="fix_in_pipeline")
         )
     return results
 

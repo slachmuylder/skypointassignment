@@ -41,11 +41,11 @@ def run() -> dict:
         "anomalies": [],
     }
 
-    # ---- Bronze (incremental) ----
+    # ---- Bronze ----
     all_files = discover_source_files()
     #get the files and hash that currently exist
     state = load_state()
-    #determine new to be processed and ones to update
+    #determine files to be processed
     to_process, new_state, file_status = filter_new_or_changed(all_files, state)
     #overwrite files that need to be updated
     files_needing_work = {t: p for t, p in to_process.items() if p}

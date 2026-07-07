@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-07T20:13:25.303215+00:00",
-  "pipeline_run_at": "2026-07-07T20:13:23.135088+00:00",
-  "checks_run": 36,
-  "checks_passed": 36,
+  "generated_at": "2026-07-07T21:10:49.141550+00:00",
+  "pipeline_run_at": "2026-07-07T21:10:46.965796+00:00",
+  "checks_run": 37,
+  "checks_passed": 37,
   "checks_failed": 0,
   "checks": [
     {
@@ -287,6 +287,15 @@
     },
     {
       "check": "primary_key_uniqueness[dim_resident.resident_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_resident_care_level.resident_id+effective_date]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0

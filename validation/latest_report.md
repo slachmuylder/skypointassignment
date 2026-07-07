@@ -1,9 +1,9 @@
 # Pinewood Data Validation Report
 
-Generated: 2026-07-07T20:13:25.303215+00:00 UTC  
-Based on pipeline run: 2026-07-07T20:13:23.135088+00:00 UTC
+Generated: 2026-07-07T21:10:49.141550+00:00 UTC  
+Based on pipeline run: 2026-07-07T21:10:46.965796+00:00 UTC
 
-**36/36 checks passed.**
+**37/37 checks passed.**
 
 No failing checks this run. Safe to approve this refresh.
 
@@ -40,6 +40,7 @@ No failing checks this run. Safe to approve this refresh.
 | referential_integrity[fact_resident_day.resident_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | primary_key_uniqueness[dim_community.community_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_resident.resident_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_resident_care_level.resident_id+effective_date] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_unit.unit_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_employee.employee_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_lease.lease_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
