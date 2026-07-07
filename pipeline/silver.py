@@ -49,10 +49,7 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df["acuity_score"] = pd.to_numeric(df["acuity_score"], errors="coerce")
     df = _dedupe_by_business_key(df, "pcc_residents")
 
-    # Confirmed anomaly: a couple of residents carry a discharge_date over a
-    # year past the end of this 6-month export (e.g. 2026-09-17) -- a
-    # future-dated event relative to the data itself, not just relative to
-    # whenever this pipeline happens to run.
+    # Clean data
     as_of = data_as_of_date()
     bad_acuity = ~df["acuity_score"].between(ACUITY_MIN, ACUITY_MAX)
     bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
@@ -73,7 +70,12 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                 return "acuity_score_out_of_range"
             if bad_discharge[i]:
                 return "future_dated_discharge"
-            return "unknown_community_id"
+            if bad_community[i]:
+                return "unknown_community_id"
+            raise AssertionError(
+                f"row {i} is in rejects but matched none of bad_acuity/bad_discharge/bad_community "
+                "-- is_reject and reason() have drifted out of sync"
+            )
 
         rejects["reject_reason"] = [reason(i) for i in rejects.index]
 
@@ -153,10 +155,17 @@ def clean_adp_shifts(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     is_reject = bad_community | bad_rate
     rejects = df[is_reject].copy()
     if not rejects.empty:
-        rejects["reject_reason"] = [
-            "unknown_community_id" if c else "unresolvable_hourly_rate"
-            for c in bad_community[is_reject]
-        ]
+        def reason(i):
+            if bad_community[i]:
+                return "unknown_community_id"
+            if bad_rate[i]:
+                return "unresolvable_hourly_rate"
+            raise AssertionError(
+                f"row {i} is in rejects but matched neither bad_community nor bad_rate "
+                "-- is_reject and reason() have drifted out of sync"
+            )
+
+        rejects["reject_reason"] = [reason(i) for i in rejects.index]
     return df[~is_reject].reset_index(drop=True), rejects
 
 
