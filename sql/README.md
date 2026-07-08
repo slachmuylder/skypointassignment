@@ -69,7 +69,7 @@ Surrogate keys are **not** persisted across pipeline runs — see
 
 ## Conformed dimensions
 
-- **`dim_community`** conforms across every fact table (`fact_resident_day`, `fact_lease`, `fact_labor`, `fact_incident`, `fact_review`, `fact_lead`) via `community_key`.
+- **`dim_community`** conforms across every fact table (`fact_resident_day`, `fact_lease`, `fact_labor`, `fact_incident`, `fact_review`, `fact_lead`) via `community_key` — and also across `dim_unit.community_key` and `dim_employee.latest_community_key`, an "outrigger" dimension-to-dimension reference (a unit or employee's community, not a fact). These use the same surrogate-key convention as any fact FK, checked by `validation.checks.referential_integrity` alongside the fact FKs.
 - **`dim_resident`** / **`dim_resident_care_level`** conform across `fact_resident_day`, `fact_lease`, `fact_incident` via `resident_key` / `care_level_key`.
 - **`dim_date`** is a role-playing dimension: `fact_resident_day.date`, `fact_labor.shift_date`, `fact_incident.incident_date`, `fact_review.review_date`/`responded_at`, `fact_lease.move_in_date`/`move_out_date`, and `fact_lead.created_date`/`tour_date`/`deposit_date`/`move_in_date` all join to it as separate roles. Facts store the raw `DATE` value rather than a surrogate date key, so Power BI (built separately, see `/powerbi`) should relate each of these columns to its own copy of `dim_date`, renamed per role (e.g. `dim_date (Shift Date)`), rather than a single bidirectional relationship.
 

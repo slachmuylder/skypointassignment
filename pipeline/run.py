@@ -126,8 +126,8 @@ def run() -> dict:
     )
     dim_community = build_dim_community()
     dim_resident = build_dim_resident(silver_tables["pcc_residents"], care_level_scd)
-    dim_unit = build_dim_unit(silver_tables["yardi_units"])
-    dim_employee = build_dim_employee(silver_tables["adp_shifts"])
+    dim_unit = build_dim_unit(silver_tables["yardi_units"], dim_community)
+    dim_employee = build_dim_employee(silver_tables["adp_shifts"], dim_community)
     dim_date = build_dim_date(*data_window())
 
     gold_tables = {

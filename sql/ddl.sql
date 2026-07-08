@@ -62,7 +62,7 @@ CREATE OR REPLACE TABLE dim_resident_care_level (
 CREATE OR REPLACE TABLE dim_unit (
     unit_key      BIGINT PRIMARY KEY,   -- surrogate key
     unit_id       VARCHAR NOT NULL,     -- natural key
-    community_id  VARCHAR,              -- natural key (see sql/README.md on why this isn't community_key)
+    community_key BIGINT REFERENCES dim_community(community_key),   -- outrigger reference to dim_community
     unit_type     VARCHAR,   -- IL / AL / MC
     monthly_rent  BIGINT     -- latest known list rent
 );
@@ -71,7 +71,7 @@ CREATE OR REPLACE TABLE dim_employee (
     employee_key           BIGINT PRIMARY KEY,   -- surrogate key
     employee_id            VARCHAR NOT NULL,     -- natural key, ADP's own employee ID
     latest_role            VARCHAR,   -- Caregiver / Med Tech / LPN / RN / Admin / Maintenance / Dining
-    latest_community_id     VARCHAR    -- natural key (see sql/README.md on why this isn't community_key)
+    latest_community_key    BIGINT REFERENCES dim_community(community_key)   -- outrigger reference to dim_community
 );
 
 CREATE OR REPLACE TABLE dim_date (

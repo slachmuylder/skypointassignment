@@ -10,13 +10,9 @@ WITH resident_days AS (
     GROUP BY community_key, month
 ),
 unit_counts AS (
-    -- dim_unit isn't linked to dim_community by a formal relationship (see
-    -- sql/README.md), so this join is by the natural community_id both
-    -- still carry as a plain attribute -- the one place that's needed.
-    SELECT c.community_key, COUNT(*) AS total_units
-    FROM 'pipeline/data/gold/dim_unit.parquet' u
-    JOIN 'pipeline/data/gold/dim_community.parquet' c USING (community_id)
-    GROUP BY c.community_key
+    SELECT community_key, COUNT(*) AS total_units
+    FROM 'pipeline/data/gold/dim_unit.parquet'
+    GROUP BY community_key
 ),
 days_in_month AS (
     SELECT date_trunc('month', date) AS month, COUNT(*) AS days

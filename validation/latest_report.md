@@ -1,8 +1,8 @@
 # Pinewood Data Refresh — Validation Summary
 
-Generated 2026-07-08T16:59:01.885949+00:00 UTC · based on the pipeline run at 2026-07-08T16:58:59.729464+00:00 UTC
+Generated 2026-07-08T17:15:13.594230+00:00 UTC · based on the pipeline run at 2026-07-08T17:15:11.620027+00:00 UTC
 
-### ✅ Safe to approve — all 47 accuracy and completeness checks passed.
+### ✅ Safe to approve — all 49 accuracy and completeness checks passed.
 
 **What was checked:**
 
@@ -53,6 +53,8 @@ Generated 2026-07-08T16:59:01.885949+00:00 UTC · based on the pipeline run at 2
 | referential_integrity[fact_review.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_lead.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_resident_day.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[dim_unit.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[dim_employee.latest_community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_lease.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_incident.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_resident_day.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |

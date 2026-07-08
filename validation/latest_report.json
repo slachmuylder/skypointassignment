@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-08T16:59:01.885949+00:00",
-  "pipeline_run_at": "2026-07-08T16:58:59.729464+00:00",
-  "checks_run": 47,
-  "checks_passed": 47,
+  "generated_at": "2026-07-08T17:15:13.594230+00:00",
+  "pipeline_run_at": "2026-07-08T17:15:11.620027+00:00",
+  "checks_run": 49,
+  "checks_passed": 49,
   "checks_failed": 0,
   "checks": [
     {
@@ -242,6 +242,24 @@
     },
     {
       "check": "referential_integrity[fact_resident_day.community_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[dim_unit.community_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[dim_employee.latest_community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0

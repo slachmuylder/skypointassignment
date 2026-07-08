@@ -120,17 +120,19 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     return _assign_surrogate_key(dim, [RESIDENT_ID, "effective_date"], "care_level_key")
 
 
-def build_dim_unit(units: pd.DataFrame) -> pd.DataFrame:
+def build_dim_unit(units: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
     df = units.copy()
     df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
     latest = df.sort_values("_month").drop_duplicates(subset="unit_id", keep="last")
-    dim = latest[["unit_id", COMMUNITY_ID, "unit_type", "monthly_rent"]]
+    latest = latest.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    dim = latest[["unit_id", "community_key", "unit_type", "monthly_rent"]]
     return _assign_surrogate_key(dim, "unit_id", "unit_key")
 
 
-def build_dim_employee(shifts: pd.DataFrame) -> pd.DataFrame:
+def build_dim_employee(shifts: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
     df = shifts.sort_values("shift_date").drop_duplicates(subset="employee_id", keep="last")
-    dim = df[["employee_id", "role", COMMUNITY_ID]].rename(columns={"role": "latest_role", COMMUNITY_ID: "latest_community_id"})
+    df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    dim = df[["employee_id", "role", "community_key"]].rename(columns={"role": "latest_role", "community_key": "latest_community_key"})
     return _assign_surrogate_key(dim, "employee_id", "employee_key")
 
 

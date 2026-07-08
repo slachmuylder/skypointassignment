@@ -58,13 +58,9 @@ def occupancy(community_ids: list[str] | None, start: str | None, end: str | Non
             GROUP BY 1, 2
         ),
         unit_counts AS (
-            -- dim_unit isn't linked to dim_community by a formal relationship
-            -- (see sql/README.md), so this join is by the natural community_id
-            -- both still carry as a plain attribute.
-            SELECT c.community_key, COUNT(*) AS total_units
-            FROM '{GOLD_DIR}/dim_unit.parquet' u
-            JOIN '{GOLD_DIR}/dim_community.parquet' c USING (community_id)
-            GROUP BY c.community_key
+            SELECT community_key, COUNT(*) AS total_units
+            FROM '{GOLD_DIR}/dim_unit.parquet'
+            GROUP BY community_key
         ),
         days_in_month AS (
             SELECT date_trunc('month', date) AS month, COUNT(*) AS days

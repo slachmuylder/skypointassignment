@@ -243,6 +243,8 @@ def referential_integrity() -> list[dict]:
         ("fact_review", "community_key", dim_community_keys),
         ("fact_lead", "community_key", dim_community_keys),
         ("fact_resident_day", "community_key", dim_community_keys),
+        ("dim_unit", "community_key", dim_community_keys),
+        ("dim_employee", "latest_community_key", dim_community_keys),
         ("fact_lease", "resident_key", dim_resident_keys),
         ("fact_incident", "resident_key", dim_resident_keys),
         ("fact_resident_day", "resident_key", dim_resident_keys),
