@@ -117,23 +117,33 @@ def run() -> dict:
     residents_history.to_parquet(SILVER_DIR / "pcc_residents_history.parquet", index=False)
 
     # ---- Gold ----
+    # Dimensions are built first (and each gets its surrogate key assigned
+    # inside its own builder) since every fact builder below needs to merge
+    # against them to resolve its foreign keys. See pipeline/gold.py's module
+    # docstring for why facts use surrogate keys rather than natural keys.
     care_level_scd = build_dim_resident_care_level_scd2(
         silver_tables["pcc_residents"], silver_tables["pcc_care_history"]
     )
+    dim_community = build_dim_community()
+    dim_resident = build_dim_resident(silver_tables["pcc_residents"], care_level_scd)
+    dim_unit = build_dim_unit(silver_tables["yardi_units"])
+    dim_employee = build_dim_employee(silver_tables["adp_shifts"])
+    dim_date = build_dim_date(*data_window())
+
     gold_tables = {
-        "dim_community": build_dim_community(),
-        "dim_resident": build_dim_resident(silver_tables["pcc_residents"], care_level_scd),
+        "dim_community": dim_community,
+        "dim_resident": dim_resident,
         "dim_resident_care_level": care_level_scd,
-        "dim_unit": build_dim_unit(silver_tables["yardi_units"]),
-        "dim_employee": build_dim_employee(silver_tables["adp_shifts"]),
-        "dim_date": build_dim_date(*data_window()),
-        "fact_resident_day": build_fact_resident_day(silver_tables["pcc_residents"], care_level_scd),
-        "fact_acuity_snapshot": build_fact_acuity_snapshot(residents_history),
-        "fact_lease": build_fact_lease(silver_tables["yardi_leases"]),
-        "fact_labor": build_fact_labor(silver_tables["adp_shifts"]),
-        "fact_incident": build_fact_incident(silver_tables["pcc_incidents"]),
-        "fact_review": build_fact_review(silver_tables["gbp_reviews"]),
-        "fact_lead": build_fact_lead(silver_tables["hubspot_leads"]),
+        "dim_unit": dim_unit,
+        "dim_employee": dim_employee,
+        "dim_date": dim_date,
+        "fact_resident_day": build_fact_resident_day(silver_tables["pcc_residents"], care_level_scd, dim_resident, dim_community),
+        "fact_acuity_snapshot": build_fact_acuity_snapshot(residents_history, dim_resident),
+        "fact_lease": build_fact_lease(silver_tables["yardi_leases"], dim_resident, dim_unit, dim_community),
+        "fact_labor": build_fact_labor(silver_tables["adp_shifts"], dim_employee, dim_community),
+        "fact_incident": build_fact_incident(silver_tables["pcc_incidents"], dim_resident, dim_community, dim_employee),
+        "fact_review": build_fact_review(silver_tables["gbp_reviews"], dim_community),
+        "fact_lead": build_fact_lead(silver_tables["hubspot_leads"], dim_community),
     }
     for name, df in gold_tables.items():
         n = write_gold_table(df, name)

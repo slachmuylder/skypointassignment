@@ -6,7 +6,7 @@
 -- qualifies.
 WITH pairs AS (
     SELECT
-        a.resident_id,
+        a.resident_key,
         a.snapshot_date AS from_date,
         a.acuity_score AS from_score,
         b.snapshot_date AS to_date,
@@ -14,13 +14,13 @@ WITH pairs AS (
         b.acuity_score - a.acuity_score AS score_increase
     FROM 'pipeline/data/gold/fact_acuity_snapshot.parquet' a
     JOIN 'pipeline/data/gold/fact_acuity_snapshot.parquet' b
-        ON a.resident_id = b.resident_id
+        ON a.resident_key = b.resident_key
         AND b.snapshot_date > a.snapshot_date
         AND b.snapshot_date <= a.snapshot_date + INTERVAL 90 DAY
     WHERE b.acuity_score - a.acuity_score >= 2
 )
 SELECT
-    p.resident_id,
+    r.resident_id,
     r.community_id,
     r.first_name,
     r.last_name,
@@ -30,8 +30,8 @@ SELECT
     p.to_score,
     p.score_increase
 FROM pairs p
-JOIN 'pipeline/data/gold/dim_resident.parquet' r USING (resident_id)
+JOIN 'pipeline/data/gold/dim_resident.parquet' r USING (resident_key)
 -- Keep only the single largest-jump window per resident so each candidate
 -- appears once in the review list.
-QUALIFY ROW_NUMBER() OVER (PARTITION BY p.resident_id ORDER BY p.score_increase DESC, p.to_date) = 1
-ORDER BY p.score_increase DESC, p.resident_id;
+QUALIFY ROW_NUMBER() OVER (PARTITION BY p.resident_key ORDER BY p.score_increase DESC, p.to_date) = 1
+ORDER BY p.score_increase DESC, r.resident_id;

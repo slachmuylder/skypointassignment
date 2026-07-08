@@ -1,8 +1,8 @@
 # Pinewood Data Refresh — Validation Summary
 
-Generated 2026-07-08T16:26:26.599075+00:00 UTC · based on the pipeline run at 2026-07-08T16:26:24.357448+00:00 UTC
+Generated 2026-07-08T16:59:01.885949+00:00 UTC · based on the pipeline run at 2026-07-08T16:58:59.729464+00:00 UTC
 
-### ✅ Safe to approve — all 37 accuracy and completeness checks passed.
+### ✅ Safe to approve — all 47 accuracy and completeness checks passed.
 
 **What was checked:**
 
@@ -47,25 +47,35 @@ Generated 2026-07-08T16:26:26.599075+00:00 UTC · based on the pipeline run at 2
 | acuity_scores_within_range | PASS | n/a | n/a | `{"resident_ids": []}` |
 | incident_severity_within_1_5 | PASS | n/a | n/a | `{"incident_ids": []}` |
 | review_rating_within_1_5 | PASS | n/a | n/a | `{"review_ids": []}` |
-| referential_integrity[fact_lease.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_labor.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_incident.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_review.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_lead.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_resident_day.community_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_lease.resident_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_incident.resident_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_resident_day.resident_id] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| primary_key_uniqueness[dim_community.community_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
-| primary_key_uniqueness[dim_resident.resident_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
-| primary_key_uniqueness[dim_resident_care_level.resident_id+effective_date] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
-| primary_key_uniqueness[dim_unit.unit_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
-| primary_key_uniqueness[dim_employee.employee_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| referential_integrity[fact_lease.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_labor.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_incident.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_review.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_lead.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_resident_day.community_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_lease.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_incident.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_resident_day.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_acuity_snapshot.resident_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_lease.unit_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_labor.employee_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_incident.reported_by_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_resident_day.care_level_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| primary_key_uniqueness[dim_community.community_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_resident.resident_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_resident_care_level.care_level_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_unit.unit_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_employee.employee_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_lease.lease_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_labor.shift_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_incident.incident_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_review.review_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_lead.lead_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| natural_key_uniqueness[dim_community.community_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| natural_key_uniqueness[dim_resident.resident_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| natural_key_uniqueness[dim_resident_care_level.resident_id+effective_date] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| natural_key_uniqueness[dim_unit.unit_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| natural_key_uniqueness[dim_employee.employee_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 
 ### Anomalies detected during ingestion (raw log)
 

@@ -3,16 +3,20 @@
 -- fact_resident_day is exactly resident-days, so this is a straight aggregation.
 WITH resident_days AS (
     SELECT
-        community_id,
+        community_key,
         date_trunc('month', date) AS month,
         COUNT(*) AS occupied_resident_days
     FROM 'pipeline/data/gold/fact_resident_day.parquet'
-    GROUP BY 1, 2
+    GROUP BY community_key, month
 ),
 unit_counts AS (
-    SELECT community_id, COUNT(*) AS total_units
-    FROM 'pipeline/data/gold/dim_unit.parquet'
-    GROUP BY 1
+    -- dim_unit isn't linked to dim_community by a formal relationship (see
+    -- sql/README.md), so this join is by the natural community_id both
+    -- still carry as a plain attribute -- the one place that's needed.
+    SELECT c.community_key, COUNT(*) AS total_units
+    FROM 'pipeline/data/gold/dim_unit.parquet' u
+    JOIN 'pipeline/data/gold/dim_community.parquet' c USING (community_id)
+    GROUP BY c.community_key
 ),
 days_in_month AS (
     SELECT date_trunc('month', date) AS month, COUNT(*) AS days
@@ -31,7 +35,7 @@ SELECT
     dim.days AS days_in_month,
     ROUND(100.0 * rd.occupied_resident_days / (uc.total_units * dim.days), 1) AS occupancy_rate_pct
 FROM resident_days rd
-JOIN unit_counts uc USING (community_id)
+JOIN unit_counts uc USING (community_key)
 JOIN days_in_month dim USING (month)
-JOIN 'pipeline/data/gold/dim_community.parquet' c USING (community_id)
+JOIN 'pipeline/data/gold/dim_community.parquet' c USING (community_key)
 ORDER BY c.community_id, rd.month;

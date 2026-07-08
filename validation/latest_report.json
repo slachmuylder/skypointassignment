@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-08T16:26:26.599075+00:00",
-  "pipeline_run_at": "2026-07-08T16:26:24.357448+00:00",
-  "checks_run": 37,
-  "checks_passed": 37,
+  "generated_at": "2026-07-08T16:59:01.885949+00:00",
+  "pipeline_run_at": "2026-07-08T16:58:59.729464+00:00",
+  "checks_run": 47,
+  "checks_passed": 47,
   "checks_failed": 0,
   "checks": [
     {
@@ -196,7 +196,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_lease.community_id]",
+      "check": "referential_integrity[fact_lease.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -205,7 +205,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_labor.community_id]",
+      "check": "referential_integrity[fact_labor.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -214,7 +214,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_incident.community_id]",
+      "check": "referential_integrity[fact_incident.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -223,7 +223,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_review.community_id]",
+      "check": "referential_integrity[fact_review.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -232,7 +232,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_lead.community_id]",
+      "check": "referential_integrity[fact_lead.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -241,7 +241,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_resident_day.community_id]",
+      "check": "referential_integrity[fact_resident_day.community_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -250,7 +250,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_lease.resident_id]",
+      "check": "referential_integrity[fact_lease.resident_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -259,7 +259,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_incident.resident_id]",
+      "check": "referential_integrity[fact_incident.resident_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -268,7 +268,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_resident_day.resident_id]",
+      "check": "referential_integrity[fact_resident_day.resident_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -277,7 +277,52 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_community.community_id]",
+      "check": "referential_integrity[fact_acuity_snapshot.resident_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_lease.unit_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_labor.employee_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_incident.reported_by_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "referential_integrity[fact_resident_day.care_level_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "primary_key_uniqueness[dim_community.community_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0
@@ -286,7 +331,7 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_resident.resident_id]",
+      "check": "primary_key_uniqueness[dim_resident.resident_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0
@@ -295,7 +340,7 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_resident_care_level.resident_id+effective_date]",
+      "check": "primary_key_uniqueness[dim_resident_care_level.care_level_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0
@@ -304,7 +349,7 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_unit.unit_id]",
+      "check": "primary_key_uniqueness[dim_unit.unit_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0
@@ -313,7 +358,7 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_employee.employee_id]",
+      "check": "primary_key_uniqueness[dim_employee.employee_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0
@@ -359,6 +404,51 @@
     },
     {
       "check": "primary_key_uniqueness[fact_lead.lead_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "natural_key_uniqueness[dim_community.community_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "natural_key_uniqueness[dim_resident.resident_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "natural_key_uniqueness[dim_resident_care_level.resident_id+effective_date]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "natural_key_uniqueness[dim_unit.unit_id]",
+      "status": "pass",
+      "detail": {
+        "duplicate_count": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
+      "check": "natural_key_uniqueness[dim_employee.employee_id]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0

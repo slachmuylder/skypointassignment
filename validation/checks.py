@@ -115,17 +115,24 @@ def no_overlapping_leases() -> dict:
     leases["move_out_date"] = pd.to_datetime(leases["move_out_date"]).fillna(pd.Timestamp("2200-01-01"))
 
     overlaps = []
-    for resident_id, grp in leases.sort_values("move_in_date").groupby("resident_id"):
+    for resident_key, grp in leases.sort_values("move_in_date").groupby("resident_key"):
         prev_end = None
         for _, row in grp.iterrows():
             if prev_end is not None and row["move_in_date"] < prev_end:
-                overlaps.append(resident_id)
+                overlaps.append(resident_key)
             prev_end = max(prev_end, row["move_out_date"]) if prev_end is not None else row["move_out_date"]
+
+    # Report the natural resident_id (not the surrogate resident_key) in the
+    # detail, since this is a human-facing check -- a bare integer key isn't
+    # something anyone reading the report could act on.
+    dim_resident = _read(GOLD_DIR, "dim_resident")
+    key_to_natural = dict(zip(dim_resident["resident_key"], dim_resident["resident_id"]))
+    residents_with_overlap = sorted({key_to_natural.get(k, k) for k in overlaps})
 
     return _result(
         "no_overlapping_leases_per_resident",
         len(overlaps) == 0,
-        {"residents_with_overlap": sorted(set(overlaps))},
+        {"residents_with_overlap": residents_with_overlap},
         severity="high",
         action="raise_to_client",
     )
@@ -216,46 +223,73 @@ def severity_and_rating_within_range() -> list[dict]:
 
 
 def referential_integrity() -> list[dict]:
+    """Every fact's surrogate-key foreign columns must resolve to a real row
+    in the dimension they reference. NULL is excluded from the check itself
+    (it means "no relationship", a different thing from "an invalid
+    reference") -- fact_incident.reported_by_key is the one column that's
+    always entirely NULL, a confirmed anomaly documented in
+    pipeline/gold.py::build_fact_incident, not a referential-integrity bug."""
     results = []
-    dim_community_ids = set(_read(GOLD_DIR, "dim_community")["community_id"])
-    dim_resident_ids = set(_read(GOLD_DIR, "dim_resident")["resident_id"])
+    dim_community_keys = set(_read(GOLD_DIR, "dim_community")["community_key"])
+    dim_resident_keys = set(_read(GOLD_DIR, "dim_resident")["resident_key"])
+    dim_unit_keys = set(_read(GOLD_DIR, "dim_unit")["unit_key"])
+    dim_employee_keys = set(_read(GOLD_DIR, "dim_employee")["employee_key"])
+    dim_care_level_keys = set(_read(GOLD_DIR, "dim_resident_care_level")["care_level_key"])
 
-    for table in ["fact_lease", "fact_labor", "fact_incident", "fact_review", "fact_lead", "fact_resident_day"]:
+    fk_checks = [
+        ("fact_lease", "community_key", dim_community_keys),
+        ("fact_labor", "community_key", dim_community_keys),
+        ("fact_incident", "community_key", dim_community_keys),
+        ("fact_review", "community_key", dim_community_keys),
+        ("fact_lead", "community_key", dim_community_keys),
+        ("fact_resident_day", "community_key", dim_community_keys),
+        ("fact_lease", "resident_key", dim_resident_keys),
+        ("fact_incident", "resident_key", dim_resident_keys),
+        ("fact_resident_day", "resident_key", dim_resident_keys),
+        ("fact_acuity_snapshot", "resident_key", dim_resident_keys),
+        ("fact_lease", "unit_key", dim_unit_keys),
+        ("fact_labor", "employee_key", dim_employee_keys),
+        ("fact_incident", "reported_by_key", dim_employee_keys),
+        ("fact_resident_day", "care_level_key", dim_care_level_keys),
+    ]
+    for table, col, valid_keys in fk_checks:
         df = _read(GOLD_DIR, table)
-        if df.empty:
+        if df.empty or col not in df.columns:
             continue
-        bad = df[~df["community_id"].isin(dim_community_ids)]
+        bad = df[df[col].notna() & ~df[col].isin(valid_keys)]
         results.append(
-            _result(f"referential_integrity[{table}.community_id]", bad.empty, {"orphan_rows": len(bad)}, severity="high", action="fix_in_pipeline")
-        )
-
-    for table in ["fact_lease", "fact_incident", "fact_resident_day"]:
-        df = _read(GOLD_DIR, table)
-        if df.empty:
-            continue
-        bad = df[~df["resident_id"].isin(dim_resident_ids)]
-        results.append(
-            _result(f"referential_integrity[{table}.resident_id]", bad.empty, {"orphan_rows": len(bad)}, severity="high", action="fix_in_pipeline")
+            _result(f"referential_integrity[{table}.{col}]", bad.empty, {"orphan_rows": len(bad)}, severity="high", action="fix_in_pipeline")
         )
     return results
 
 
 def primary_key_uniqueness() -> list[dict]:
     """key is a single column name, or a list of column names for a
-    composite key (e.g. dim_resident_care_level's SCD2 rows are keyed by
-    resident_id + effective_date, not resident_id alone)."""
+    composite key. Dimensions are keyed by their surrogate key
+    (community_key, resident_key, etc.) -- but a dimension's NATURAL key
+    must also be unique (one surrogate key per resident_id, not two), which
+    is a distinct thing worth checking on its own: if it weren't, the
+    surrogate-key assignment itself would have a bug, silently giving one
+    real-world resident two different resident_key values."""
     results = []
     pk_map: dict[str, str | list[str]] = {
-        "dim_community": "community_id",
-        "dim_resident": "resident_id",
-        "dim_resident_care_level": ["resident_id", "effective_date"],
-        "dim_unit": "unit_id",
-        "dim_employee": "employee_id",
+        "dim_community": "community_key",
+        "dim_resident": "resident_key",
+        "dim_resident_care_level": "care_level_key",
+        "dim_unit": "unit_key",
+        "dim_employee": "employee_key",
         "fact_lease": "lease_id",
         "fact_labor": "shift_id",
         "fact_incident": "incident_id",
         "fact_review": "review_id",
         "fact_lead": "lead_id",
+    }
+    natural_key_map = {
+        "dim_community": "community_id",
+        "dim_resident": "resident_id",
+        "dim_resident_care_level": ["resident_id", "effective_date"],
+        "dim_unit": "unit_id",
+        "dim_employee": "employee_id",
     }
     for table, key in pk_map.items():
         df = _read(GOLD_DIR, table)
@@ -265,6 +299,16 @@ def primary_key_uniqueness() -> list[dict]:
         key_label = "+".join(key) if isinstance(key, list) else key
         results.append(
             _result(f"primary_key_uniqueness[{table}.{key_label}]", dupes.empty, {"duplicate_count": len(dupes)}, severity="high", action="fix_in_pipeline")
+        )
+
+    for table, key in natural_key_map.items():
+        df = _read(GOLD_DIR, table)
+        if df.empty:
+            continue
+        dupes = df[df.duplicated(subset=key)]
+        key_label = "+".join(key) if isinstance(key, list) else key
+        results.append(
+            _result(f"natural_key_uniqueness[{table}.{key_label}]", dupes.empty, {"duplicate_count": len(dupes)}, severity="high", action="fix_in_pipeline")
         )
     return results
 

@@ -4,11 +4,36 @@ Grain of each table is documented in sql/README.md -- this module is the
 Python-side implementation of that same design (SCD2 for care level, the
 resident-day fact that the required occupancy/labor/incident views are all
 built from, etc). Output is one Parquet file per dimension/fact table.
+
+Every dimension (except dim_date, whose natural key -- the date itself --
+is already unique, sortable, and meaningful on its own) gets a numeric
+surrogate key as its primary key, with the source system's natural key
+retained as a plain attribute column. Every fact table's foreign keys to
+those dimensions are the surrogate keys, not the natural keys -- a fact
+still carries its OWN natural business key (lease_id, shift_id, incident_id,
+etc.), since that's the fact's own identifier, not a reference to a
+dimension.
+
+Surrogate keys are recomputed fresh on every Gold rebuild (sorted by natural
+key, then enumerated 1..n) rather than persisted across runs, consistent
+with Gold always doing a full rebuild from Silver rather than an incremental
+one. That's stable in practice for this dataset, since natural keys here are
+already assigned in a stable order (e.g. a new resident_id sorts after all
+existing ones, never in the middle) -- a production system where a new
+natural key could sort before existing ones would need a persisted
+natural-key -> surrogate-key mapping instead, so an existing dimension
+member's key never changes once assigned.
 """
 import pandas as pd
 
 from pipeline.columns import COMMUNITY_ID, RESIDENT_ID
 from pipeline.config import COMMUNITY_STATE, GOLD_DIR, STATE_REGION, VALID_COMMUNITY_IDS, data_as_of_date, data_window
+
+
+def _assign_surrogate_key(df: pd.DataFrame, natural_key_cols, key_name: str) -> pd.DataFrame:
+    df = df.sort_values(natural_key_cols).reset_index(drop=True)
+    df.insert(0, key_name, range(1, len(df) + 1))
+    return df
 
 
 def _latest_per_resident(residents: pd.DataFrame) -> pd.DataFrame:
@@ -28,7 +53,7 @@ def build_dim_community() -> pd.DataFrame:
         {COMMUNITY_ID: cid, "state": COMMUNITY_STATE[cid], "region": STATE_REGION[COMMUNITY_STATE[cid]]}
         for cid in sorted(VALID_COMMUNITY_IDS)
     ]
-    return pd.DataFrame(rows)
+    return _assign_surrogate_key(pd.DataFrame(rows), COMMUNITY_ID, "community_key")
 
 
 def build_dim_resident(residents: pd.DataFrame, care_level_scd: pd.DataFrame) -> pd.DataFrame:
@@ -36,12 +61,13 @@ def build_dim_resident(residents: pd.DataFrame, care_level_scd: pd.DataFrame) ->
     current_level = care_level_scd[care_level_scd["is_current"]][[RESIDENT_ID, "care_level"]]
     dim = current.merge(current_level, on=RESIDENT_ID, how="left", suffixes=("_snapshot", ""))
     dim["care_level"] = dim["care_level"].fillna(dim["care_level_snapshot"])
-    return dim[
+    dim = dim[
         [
             RESIDENT_ID, COMMUNITY_ID, "first_name", "last_name", "dob", "gender",
             "admit_date", "discharge_date", "care_level", "acuity_score",
         ]
     ]
+    return _assign_surrogate_key(dim, RESIDENT_ID, "resident_key")
 
 
 def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd.DataFrame) -> pd.DataFrame:
@@ -49,7 +75,12 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     effective/end dates rather than an overwrite. Built primarily from
     pcc_care_history (transactional change events); residents with no
     recorded change event get a single open-ended version seeded from their
-    admit_date + snapshot care_level."""
+    admit_date + snapshot care_level.
+
+    Each SCD2 version -- not each resident -- gets its own surrogate key
+    (care_level_key), since this table's grain is resident x time-period,
+    not resident alone; a resident who changed care level has multiple valid
+    rows and therefore multiple keys."""
     events = care_history.dropna(subset=["change_date"]).sort_values([RESIDENT_ID, "change_date"])
     rows = []
     residents_with_history = set(events[RESIDENT_ID].unique())
@@ -85,10 +116,93 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
             }
         )
 
-    return pd.DataFrame(rows)
+    dim = pd.DataFrame(rows)
+    return _assign_surrogate_key(dim, [RESIDENT_ID, "effective_date"], "care_level_key")
 
 
-def build_fact_acuity_snapshot(residents_history: pd.DataFrame) -> pd.DataFrame:
+def build_dim_unit(units: pd.DataFrame) -> pd.DataFrame:
+    df = units.copy()
+    df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
+    latest = df.sort_values("_month").drop_duplicates(subset="unit_id", keep="last")
+    dim = latest[["unit_id", COMMUNITY_ID, "unit_type", "monthly_rent"]]
+    return _assign_surrogate_key(dim, "unit_id", "unit_key")
+
+
+def build_dim_employee(shifts: pd.DataFrame) -> pd.DataFrame:
+    df = shifts.sort_values("shift_date").drop_duplicates(subset="employee_id", keep="last")
+    dim = df[["employee_id", "role", COMMUNITY_ID]].rename(columns={"role": "latest_role", COMMUNITY_ID: "latest_community_id"})
+    return _assign_surrogate_key(dim, "employee_id", "employee_key")
+
+
+def build_dim_date(start: str, end: str) -> pd.DataFrame:
+    """No surrogate key here -- the date itself is already unique, sortable,
+    and meaningful, so a meaningless integer key wouldn't add anything."""
+    dates = pd.date_range(start, end, freq="D")
+    return pd.DataFrame(
+        {
+            "date": dates.strftime("%Y-%m-%d"),
+            "year": dates.year,
+            "month": dates.month,
+            "day": dates.day,
+            "month_name": dates.strftime("%B"),
+            "quarter": dates.quarter,
+            "day_of_week": dates.strftime("%A"),
+        }
+    )
+
+
+def build_fact_resident_day(
+    residents: pd.DataFrame, care_level_scd: pd.DataFrame, dim_resident: pd.DataFrame, dim_community: pd.DataFrame
+) -> pd.DataFrame:
+    """Grain: one row per resident per calendar day they were active
+    (admit_date <= day <= discharge_date, or day <= today if still resident).
+    This is the base fact that occupancy, labor-cost-per-resident-day, and
+    incident-rate-per-100-resident-days are all computed against.
+
+    Built as a single vectorized DuckDB query (spine of resident x day via
+    generate_series, joined to the SCD2 care-level range) -- a row-by-row
+    Python loop over ~800k resident-days took 2+ minutes; this takes under a
+    second. resident_key/community_key/care_level_key are resolved by
+    joining the query's output back to the already-keyed dimensions --
+    care_level_key comes directly out of the range join against
+    care_level_scd (which already has its surrogate key assigned by the time
+    this runs)."""
+    import duckdb
+
+    current = _latest_per_resident(residents)[
+        [RESIDENT_ID, COMMUNITY_ID, "admit_date", "discharge_date"]
+    ].dropna(subset=["admit_date"]).copy()
+    as_of = data_as_of_date()
+    current["stop_date"] = current["discharge_date"].fillna(as_of)
+    current = current[current["stop_date"] >= current["admit_date"]]
+
+    scd = care_level_scd.copy()
+    scd["end_date"] = scd["end_date"].fillna("2200-01-01")
+
+    spine = duckdb.sql(
+        """
+        SELECT
+            c.resident_id,
+            c.community_id,
+            CAST(d.date AS VARCHAR) AS date,
+            scd.care_level_key
+        FROM current c
+        CROSS JOIN LATERAL UNNEST(
+            generate_series(c.admit_date::DATE, c.stop_date::DATE, INTERVAL 1 DAY)
+        ) AS d(date)
+        LEFT JOIN scd
+            ON scd.resident_id = c.resident_id
+            AND d.date >= scd.effective_date::DATE
+            AND d.date < scd.end_date::DATE
+        """
+    ).df()
+
+    spine = spine.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
+    spine = spine.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    return spine[["resident_key", "community_key", "date", "care_level_key"]]
+
+
+def build_fact_acuity_snapshot(residents_history: pd.DataFrame, dim_resident: pd.DataFrame) -> pd.DataFrame:
     """Periodic snapshot fact, grain: one row per resident per MONTH they had
     a valid acuity reading -- deliberately not collapsed down to "distinct
     values only".
@@ -113,102 +227,60 @@ def build_fact_acuity_snapshot(residents_history: pd.DataFrame) -> pd.DataFrame:
     df = residents_history.dropna(subset=["acuity_score"]).copy()
     df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
     df["snapshot_date"] = pd.to_datetime(df["_month"], format="%Y_%m") + pd.offsets.MonthEnd(0)
-    return df[[RESIDENT_ID, "snapshot_date", "acuity_score"]].sort_values([RESIDENT_ID, "snapshot_date"]).reset_index(drop=True)
+    df = df.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
+    return df[["resident_key", "snapshot_date", "acuity_score"]].sort_values(["resident_key", "snapshot_date"]).reset_index(drop=True)
 
 
-def build_dim_unit(units: pd.DataFrame) -> pd.DataFrame:
-    df = units.copy()
-    df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
-    latest = df.sort_values("_month").drop_duplicates(subset="unit_id", keep="last")
-    return latest[["unit_id", COMMUNITY_ID, "unit_type", "monthly_rent"]].drop(columns=[], errors="ignore")
-
-
-def build_dim_employee(shifts: pd.DataFrame) -> pd.DataFrame:
-    df = shifts.sort_values("shift_date").drop_duplicates(subset="employee_id", keep="last")
-    return df[["employee_id", "role", COMMUNITY_ID]].rename(columns={"role": "latest_role", COMMUNITY_ID: "latest_community_id"})
-
-
-def build_dim_date(start: str, end: str) -> pd.DataFrame:
-    dates = pd.date_range(start, end, freq="D")
-    return pd.DataFrame(
-        {
-            "date": dates.strftime("%Y-%m-%d"),
-            "year": dates.year,
-            "month": dates.month,
-            "day": dates.day,
-            "month_name": dates.strftime("%B"),
-            "quarter": dates.quarter,
-            "day_of_week": dates.strftime("%A"),
-        }
-    )
-
-
-def build_fact_resident_day(residents: pd.DataFrame, care_level_scd: pd.DataFrame) -> pd.DataFrame:
-    """Grain: one row per resident per calendar day they were active
-    (admit_date <= day <= discharge_date, or day <= today if still resident).
-    This is the base fact that occupancy, labor-cost-per-resident-day, and
-    incident-rate-per-100-resident-days are all computed against.
-
-    Built as a single vectorized DuckDB query (spine of resident x day via
-    generate_series, joined to the SCD2 care-level range) -- a row-by-row
-    Python loop over ~800k resident-days took 2+ minutes; this takes under a
-    second."""
-    import duckdb
-
-    current = _latest_per_resident(residents)[
-        [RESIDENT_ID, COMMUNITY_ID, "admit_date", "discharge_date"]
-    ].dropna(subset=["admit_date"]).copy()
-    as_of = data_as_of_date()
-    current["stop_date"] = current["discharge_date"].fillna(as_of)
-    current = current[current["stop_date"] >= current["admit_date"]]
-
-    scd = care_level_scd.copy()
-    scd["end_date"] = scd["end_date"].fillna("2200-01-01")
-
-    return duckdb.sql(
-        """
-        SELECT
-            c.resident_id,
-            c.community_id,
-            CAST(d.date AS VARCHAR) AS date,
-            scd.care_level
-        FROM current c
-        CROSS JOIN LATERAL UNNEST(
-            generate_series(c.admit_date::DATE, c.stop_date::DATE, INTERVAL 1 DAY)
-        ) AS d(date)
-        LEFT JOIN scd
-            ON scd.resident_id = c.resident_id
-            AND d.date >= scd.effective_date::DATE
-            AND d.date < scd.end_date::DATE
-        """
-    ).df()
-
-
-def build_fact_lease(leases: pd.DataFrame) -> pd.DataFrame:
-    return leases[
-        ["lease_id", RESIDENT_ID, "unit_id", COMMUNITY_ID, "move_in_date", "move_out_date", "move_out_reason", "monthly_rate"]
+def build_fact_lease(leases: pd.DataFrame, dim_resident: pd.DataFrame, dim_unit: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
+    df = leases.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
+    df = df.merge(dim_unit[["unit_id", "unit_key"]], on="unit_id", how="left")
+    df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    return df[
+        ["lease_id", "resident_key", "unit_key", "community_key", "move_in_date", "move_out_date", "move_out_reason", "monthly_rate"]
     ].copy()
 
 
-def build_fact_labor(shifts: pd.DataFrame) -> pd.DataFrame:
+def build_fact_labor(shifts: pd.DataFrame, dim_employee: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
     df = shifts.copy()
     df["labor_cost"] = df["hours_worked"] * df["hourly_rate"]
-    return df[["shift_id", COMMUNITY_ID, "employee_id", "role", "shift_date", "hours_worked", "hourly_rate", "labor_cost"]]
+    df = df.merge(dim_employee[["employee_id", "employee_key"]], on="employee_id", how="left")
+    df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    return df[["shift_id", "community_key", "employee_key", "role", "shift_date", "hours_worked", "hourly_rate", "labor_cost"]]
 
 
-def build_fact_incident(incidents: pd.DataFrame) -> pd.DataFrame:
-    return incidents[["incident_id", RESIDENT_ID, COMMUNITY_ID, "incident_date", "incident_type", "severity", "reported_by"]].copy()
+def build_fact_incident(incidents: pd.DataFrame, dim_resident: pd.DataFrame, dim_community: pd.DataFrame, dim_employee: pd.DataFrame) -> pd.DataFrame:
+    """Confirmed anomaly, surfaced only by formalizing reported_by as a real
+    FK instead of an unvalidated VARCHAR (the design before this): PCC's
+    pcc_incidents.reported_by IDs are all 4-digit ("E1000"-"E9982") while
+    ADP's adp_shifts.employee_id IDs are all 5-digit ("E10104"-"E99915") --
+    zero overlap, across all 411 incidents and 68,071 shifts, with no
+    exceptions on either side. These are two entirely separate employee-ID
+    systems that were never reconciled between PCC and ADP -- the same class
+    of problem the assessment calls out for *resident* identity between PCC
+    and Yardi, just undocumented here. reported_by_key is left NULL for
+    every row as a result; not something to force-fix without a real
+    cross-system employee mapping Pinewood doesn't have."""
+    df = incidents.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
+    df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    df = df.merge(
+        dim_employee[["employee_id", "employee_key"]].rename(columns={"employee_id": "reported_by", "employee_key": "reported_by_key"}),
+        on="reported_by", how="left",
+    )
+    df["reported_by_key"] = df["reported_by_key"].astype("Int64")
+    return df[["incident_id", "resident_key", "community_key", "incident_date", "incident_type", "severity", "reported_by_key"]].copy()
 
 
-def build_fact_review(reviews: pd.DataFrame) -> pd.DataFrame:
+def build_fact_review(reviews: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
     df = reviews.copy()
     df["has_response"] = df["response_text"].notna()
-    return df[["review_id", COMMUNITY_ID, "review_date", "rating", "has_response", "responded_at"]]
+    df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    return df[["review_id", "community_key", "review_date", "rating", "has_response", "responded_at"]]
 
 
-def build_fact_lead(leads: pd.DataFrame) -> pd.DataFrame:
-    return leads[
-        ["lead_id", COMMUNITY_ID, "lead_source", "created_date", "tour_date", "deposit_date", "move_in_date", "status", "lost_reason"]
+def build_fact_lead(leads: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
+    df = leads.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
+    return df[
+        ["lead_id", "community_key", "lead_source", "created_date", "tour_date", "deposit_date", "move_in_date", "status", "lost_reason"]
     ].copy()
 
 

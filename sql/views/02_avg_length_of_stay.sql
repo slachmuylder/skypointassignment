@@ -4,7 +4,8 @@
 -- computed relative to the latest date actually present, not wall-clock
 -- today, so this stays correct if more months are added later.
 WITH as_of AS (
-    SELECT MAX(discharge_date) AS max_discharge FROM 'pipeline/data/gold/dim_resident.parquet'
+    SELECT MAX(discharge_date) AS max_discharge 
+    FROM 'pipeline/data/gold/dim_resident.parquet'
 )
 SELECT
     care_level,
