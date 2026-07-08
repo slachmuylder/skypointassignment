@@ -76,7 +76,7 @@ Surrogate keys are **not** persisted across pipeline runs — see
 ## Notes on the required views
 
 - **`06_acuity_increase_alerts.sql`** returns 0 rows against this dataset — verified this is a genuine finding, not a query bug: no resident's acuity score ever increases at all in the 6-month export (every change is flat or downward). The self-join logic itself was checked against a hand-built synthetic series with an obvious jump before confirming the real data has none.
-- **`05_incident_rate.sql`** includes some `care_level = NULL` resident-day buckets. This is a genuine data gap, not a defect: `dim_resident_care_level` (SCD2) is only complete back to each resident's earliest recorded change event *within the 6-month export window* — a resident admitted years before the window with no in-window care-level change has no recorded starting state, so those pre-first-event resident-days are correctly left unattributed rather than guessed at.
+- **`05_incident_rate.sql`** has no `care_level = NULL` resident-day buckets: `dim_resident_care_level` (SCD2) covers every resident-day, including the period before their earliest recorded change event. That period isn't just left unattributed — `build_dim_resident_care_level_scd2` (`pipeline/gold.py`) seeds an opening version running from `admit_date` to the first recorded `change_date`, using that same event's `previous_level` (which is exactly what the resident's care level was for the whole pre-history period). Only a resident with zero recorded change events who is *also* missing a current `care_level` in their latest snapshot could still produce a NULL — not observed in this dataset.
 
 ## Anomaly: `fact_incident.reported_by_key` is always NULL
 

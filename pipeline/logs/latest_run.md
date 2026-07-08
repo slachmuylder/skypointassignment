@@ -1,7 +1,7 @@
 # Pipeline Run Report
 
-Run at: 2026-07-08T17:15:11.620027+00:00 UTC  
-Duration: 1.53s
+Run at: 2026-07-08T17:46:37.627745+00:00 UTC  
+Duration: 1.6s
 
 ## Bronze (incremental ingestion)
 
@@ -35,7 +35,7 @@ Duration: 1.53s
 |---|---|
 | dim_community | 14 |
 | dim_resident | 823 |
-| dim_resident_care_level | 841 |
+| dim_resident_care_level | 854 |
 | dim_unit | 910 |
 | dim_employee | 617 |
 | dim_date | 181 |

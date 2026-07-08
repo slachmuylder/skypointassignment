@@ -77,6 +77,16 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     recorded change event get a single open-ended version seeded from their
     admit_date + snapshot care_level.
 
+    A resident's earliest recorded change event only tells us their care
+    level *from* change_date onward -- it says nothing about the period
+    between admit_date and that first change. But the event itself also
+    carries previous_level, which is exactly what the resident's care level
+    was for that whole pre-history period, so it's used here to seed one
+    additional opening version (admit_date -> first change_date) rather than
+    leaving that period with no SCD2 row at all (which would otherwise surface
+    as an unexplained NULL care_level_key in fact_resident_day for every
+    resident who has at least one recorded change event).
+
     Each SCD2 version -- not each resident -- gets its own surrogate key
     (care_level_key), since this table's grain is resident x time-period,
     not resident alone; a resident who changed care level has multiple valid
@@ -84,6 +94,8 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     events = care_history.dropna(subset=["change_date"]).sort_values([RESIDENT_ID, "change_date"])
     rows = []
     residents_with_history = set(events[RESIDENT_ID].unique())
+    current_snapshot = _latest_per_resident(residents)
+    admit_dates = current_snapshot.set_index(RESIDENT_ID)["admit_date"]
 
     for resident_id, grp in events.groupby(RESIDENT_ID):
         grp = grp.reset_index(drop=True)
@@ -100,7 +112,20 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
                 }
             )
 
-    current_snapshot = _latest_per_resident(residents)
+        first_event = grp.iloc[0]
+        admit_date = admit_dates.get(resident_id)
+        if pd.notna(admit_date) and pd.notna(first_event["previous_level"]) and first_event["change_date"] > admit_date:
+            rows.append(
+                {
+                    RESIDENT_ID: resident_id,
+                    "care_level": first_event["previous_level"],
+                    "effective_date": admit_date,
+                    "end_date": first_event["change_date"],
+                    "is_current": False,
+                    "change_reason": "Admission (opening balance, backfilled from earliest recorded change's previous_level)",
+                }
+            )
+
     no_history = current_snapshot[~current_snapshot[RESIDENT_ID].isin(residents_with_history)]
     for _, row in no_history.iterrows():
         if pd.isna(row["care_level"]):

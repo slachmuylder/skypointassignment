@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-07-08T17:15:11.620027+00:00",
+  "run_at": "2026-07-08T17:46:37.627745+00:00",
   "bronze": {
     "pcc_residents": {
       "files_processed": 0,
@@ -116,7 +116,7 @@
       "rows_out": 823
     },
     "dim_resident_care_level": {
-      "rows_out": 841
+      "rows_out": 854
     },
     "dim_unit": {
       "rows_out": 910
@@ -231,5 +231,5 @@
       "action": "quarantine"
     }
   ],
-  "duration_seconds": 1.53
+  "duration_seconds": 1.6
 }

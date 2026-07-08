@@ -93,7 +93,7 @@ CREATE OR REPLACE TABLE fact_resident_day (
     resident_key    BIGINT REFERENCES dim_resident(resident_key),
     community_key   BIGINT REFERENCES dim_community(community_key),
     date            DATE REFERENCES dim_date(date),
-    care_level_key  BIGINT REFERENCES dim_resident_care_level(care_level_key),  -- as of this day; NULL for the documented pre-window history gap, see sql/README.md
+    care_level_key  BIGINT REFERENCES dim_resident_care_level(care_level_key),  -- as of this day; see sql/README.md on the opening-balance version that covers pre-first-event days
     PRIMARY KEY (resident_key, date)
 );
 
