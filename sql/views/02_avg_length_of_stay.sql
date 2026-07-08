@@ -1,8 +1,5 @@
 -- Average length of stay (days), by care level, for residents discharged in
--- the trailing 12 months. This dataset only spans 6 months, so "trailing 12
--- months" ends up covering every discharge in the data -- the window is
--- computed relative to the latest date actually present, not wall-clock
--- today, so this stays correct if more months are added later.
+-- the trailing 12 months from the max discharge date
 WITH as_of AS (
     SELECT MAX(discharge_date) AS max_discharge 
     FROM 'pipeline/data/gold/dim_resident.parquet'
