@@ -38,22 +38,35 @@ def _dedupe_by_business_key(df: pd.DataFrame, table: str) -> pd.DataFrame:
     )
 
 
-def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # Normalize BEFORE deduping since some of the columns are part of the 
-    # business key
+def _clean_pcc_residents_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Per-row normalization shared by both pcc_residents outputs below --
+    parses/canonicalizes fields only, no deduping, no business-rule
+    filtering yet."""
     df = df.copy()
     df["dob"] = parse_mixed_date(df["dob"])
     df["admit_date"] = parse_mixed_date(df["admit_date"])
     df["discharge_date"] = parse_mixed_date(df["discharge_date"])
     df["care_level"] = _normalize_care_level(df["care_level"])
     df["acuity_score"] = pd.to_numeric(df["acuity_score"], errors="coerce")
-    df = _dedupe_by_business_key(df, "pcc_residents")
+    return df
 
-    # Clean data
+
+def _apply_pcc_residents_business_rules(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     as_of = data_as_of_date()
     bad_acuity = ~df["acuity_score"].between(ACUITY_MIN, ACUITY_MAX)
     bad_community = ~df[COMMUNITY_ID].isin(VALID_COMMUNITY_IDS)
     bad_discharge = df["discharge_date"].notna() & (df["discharge_date"] > as_of)
+    return df, bad_acuity, bad_community, bad_discharge
+
+
+def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    # Normalize BEFORE deduping since some of the columns are part of the
+    # business key
+    df = _clean_pcc_residents_rows(df)
+    df = _dedupe_by_business_key(df, "pcc_residents")
+
+    # Clean data
+    df, bad_acuity, bad_community, bad_discharge = _apply_pcc_residents_business_rules(df)
 
     rejects = df[bad_acuity | bad_community | bad_discharge].copy()
     if not rejects.empty:
@@ -74,6 +87,31 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df.loc[bad_acuity, "acuity_score"] = None
     df.loc[bad_discharge, "discharge_date"] = None
     return df[~bad_community].reset_index(drop=True), rejects
+
+
+def clean_pcc_residents_history(df: pd.DataFrame) -> pd.DataFrame:
+    """Cleaned but NOT deduped -- every month's row survives (after the same
+    per-row normalization as clean_pcc_residents), so a resident's true
+    reading-by-reading history is preserved. The canonical clean_pcc_residents
+    output collapses repeated monthly snapshots down to one row per distinct
+    state, which is exactly what dim_resident/fact_resident_day want (a
+    single "current" row per resident) -- but it means a value's recorded
+    date is when it was *last* confirmed before changing, not when it first
+    appeared. For fact_acuity_snapshot (pipeline/gold.py), that difference
+    matters: it can make a real change look like it took longer than it did,
+    understating whether a jump happened within the 90-day window the
+    assessment asks about. This table exists so Gold can build that history
+    from clean, honest per-month data instead.
+
+    Same acuity/community/discharge validity filtering as the canonical
+    table is applied (so a garbage reading doesn't corrupt the history), but
+    it isn't re-logged as a separate anomaly -- clean_pcc_residents already
+    reports those once."""
+    df = _clean_pcc_residents_rows(df)
+    df, bad_acuity, bad_community, bad_discharge = _apply_pcc_residents_business_rules(df)
+    df.loc[bad_acuity, "acuity_score"] = None
+    df.loc[bad_discharge, "discharge_date"] = None
+    return df[~bad_community].reset_index(drop=True)
 
 
 def clean_pcc_incidents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

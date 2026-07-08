@@ -1,6 +1,6 @@
 # Pinewood Data Refresh — Validation Summary
 
-Generated 2026-07-08T02:42:56.520585+00:00 UTC · based on the pipeline run at 2026-07-08T02:42:54.366604+00:00 UTC
+Generated 2026-07-08T16:26:26.599075+00:00 UTC · based on the pipeline run at 2026-07-08T16:26:24.357448+00:00 UTC
 
 ### ✅ Safe to approve — all 37 accuracy and completeness checks passed.
 

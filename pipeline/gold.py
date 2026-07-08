@@ -88,21 +88,32 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     return pd.DataFrame(rows)
 
 
-def build_fact_acuity_snapshot(residents: pd.DataFrame) -> pd.DataFrame:
-    """Periodic snapshot fact, grain: one row per resident per distinct
-    acuity reading, dated to the last month that reading was confirmed in.
+def build_fact_acuity_snapshot(residents_history: pd.DataFrame) -> pd.DataFrame:
+    """Periodic snapshot fact, grain: one row per resident per MONTH they had
+    a valid acuity reading -- deliberately not collapsed down to "distinct
+    values only".
 
     dim_resident only keeps each resident's latest (Type-1) acuity_score, so
     it can't answer "did this resident's acuity jump by 2+ points within 90
     days" -- that requires the history, which is what this table is for.
-    Built from the already-deduped Silver pcc_residents table: distinct rows
-    per resident there correspond to distinct (admit/discharge/care_level/
-    acuity_score) states, each carrying the _source_file of the last month
-    that state was observed."""
-    df = residents.dropna(subset=["acuity_score"]).copy()
+    Takes `residents_history` -- the cleaned-but-NOT-deduped companion to
+    Silver's canonical pcc_residents (see
+    pipeline/silver.py::clean_pcc_residents_history).
+
+    Collapsing consecutive identical readings down to just their first (or
+    just their last) occurrence was tried and is deliberately NOT done here:
+    it actively breaks the 90-day-window check. If a resident held a value
+    from January through June and changed in July, keeping only January's
+    "first occurrence" of the old value makes the self-join in
+    sql/views/06_acuity_increase_alerts.sql see a 181-day gap and correctly
+    (per that collapsed view) exclude it -- even though the real gap that
+    matters is June-to-July, 31 days, which should fire. Keeping every
+    month's row lets that self-join find the closest actual qualifying pair
+    on its own, which is what it's already designed to do."""
+    df = residents_history.dropna(subset=["acuity_score"]).copy()
     df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
     df["snapshot_date"] = pd.to_datetime(df["_month"], format="%Y_%m") + pd.offsets.MonthEnd(0)
-    return df[[RESIDENT_ID, "snapshot_date", "acuity_score"]].sort_values([RESIDENT_ID, "snapshot_date"])
+    return df[[RESIDENT_ID, "snapshot_date", "acuity_score"]].sort_values([RESIDENT_ID, "snapshot_date"]).reset_index(drop=True)
 
 
 def build_dim_unit(units: pd.DataFrame) -> pd.DataFrame:

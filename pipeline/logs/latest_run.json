@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-07-08T02:42:54.366604+00:00",
+  "run_at": "2026-07-08T16:26:24.357448+00:00",
   "bronze": {
     "pcc_residents": {
       "files_processed": 6,
@@ -187,7 +187,7 @@
       "rows_out": 543015
     },
     "fact_acuity_snapshot": {
-      "rows_out": 823
+      "rows_out": 4134
     },
     "fact_lease": {
       "rows_out": 302
@@ -287,5 +287,5 @@
       "action": "quarantine"
     }
   ],
-  "duration_seconds": 1.67
+  "duration_seconds": 1.74
 }

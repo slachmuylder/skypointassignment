@@ -5,7 +5,7 @@ WITH labor AS (
         date_trunc('month', shift_date) AS month,
         SUM(labor_cost) AS total_labor_cost
     FROM 'pipeline/data/gold/fact_labor.parquet'
-    GROUP BY 1, 2
+    GROUP BY community_id, month
 ),
 resident_days AS (
     SELECT
@@ -13,7 +13,7 @@ resident_days AS (
         date_trunc('month', date) AS month,
         COUNT(*) AS resident_days
     FROM 'pipeline/data/gold/fact_resident_day.parquet'
-    GROUP BY 1, 2
+    GROUP BY community_id, month
 )
 SELECT
     l.community_id,

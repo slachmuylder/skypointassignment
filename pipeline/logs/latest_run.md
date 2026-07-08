@@ -1,7 +1,7 @@
 # Pipeline Run Report
 
-Run at: 2026-07-08T02:42:54.366604+00:00 UTC  
-Duration: 1.67s
+Run at: 2026-07-08T16:26:24.357448+00:00 UTC  
+Duration: 1.74s
 
 ## Bronze (incremental ingestion)
 
@@ -40,7 +40,7 @@ Duration: 1.67s
 | dim_employee | 617 |
 | dim_date | 181 |
 | fact_resident_day | 543015 |
-| fact_acuity_snapshot | 823 |
+| fact_acuity_snapshot | 4134 |
 | fact_lease | 302 |
 | fact_labor | 68071 |
 | fact_incident | 411 |

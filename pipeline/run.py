@@ -27,7 +27,7 @@ from pipeline.gold import (
     build_fact_lead,
     write_gold_table,
 )
-from pipeline.silver import CLEANERS
+from pipeline.silver import CLEANERS, clean_pcc_residents_history
 from pipeline.state import filter_new_or_changed, load_state, save_state
 
 
@@ -103,6 +103,19 @@ def run() -> dict:
             "rows_flagged": len(rejects),
         }
 
+    # Cleaned-but-not-deduped companion to silver_tables["pcc_residents"]:
+    # every month's row survives, so Gold can reconstruct a resident's true
+    # reading-by-reading history instead of only their latest state per
+    # distinct value. See pipeline/silver.py::clean_pcc_residents_history.
+    # Not added to log["silver"] -- that dict's shape (rows_in/out/dropped/
+    # flagged) is relied on as-is by _write_markdown_log and
+    # validation/checks.py::row_count_reconciliation; this table's own
+    # anomalies are already covered by silver_tables["pcc_residents"]'s
+    # rejects, so it doesn't need a parallel entry there.
+    residents_history = clean_pcc_residents_history(read_bronze_table("pcc_residents"))
+    SILVER_DIR.mkdir(parents=True, exist_ok=True)
+    residents_history.to_parquet(SILVER_DIR / "pcc_residents_history.parquet", index=False)
+
     # ---- Gold ----
     care_level_scd = build_dim_resident_care_level_scd2(
         silver_tables["pcc_residents"], silver_tables["pcc_care_history"]
@@ -115,7 +128,7 @@ def run() -> dict:
         "dim_employee": build_dim_employee(silver_tables["adp_shifts"]),
         "dim_date": build_dim_date(*data_window()),
         "fact_resident_day": build_fact_resident_day(silver_tables["pcc_residents"], care_level_scd),
-        "fact_acuity_snapshot": build_fact_acuity_snapshot(silver_tables["pcc_residents"]),
+        "fact_acuity_snapshot": build_fact_acuity_snapshot(residents_history),
         "fact_lease": build_fact_lease(silver_tables["yardi_leases"]),
         "fact_labor": build_fact_labor(silver_tables["adp_shifts"]),
         "fact_incident": build_fact_incident(silver_tables["pcc_incidents"]),

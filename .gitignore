@@ -8,3 +8,9 @@ pipeline/data/gold/
 pipeline/data/_pipeline_state.parquet
 .pytest_cache/
 session-notes/
+
+# Synthetic test month (acuity-jump changes for 3 residents) -- not part of
+# the assessment's delivered dataset, kept locally to exercise
+# sql/views/06_acuity_increase_alerts.sql, which the real 6-month data never
+# triggers. See session discussion for why it exists.
+candidate_package/data/pcc_residents_2025_07.csv

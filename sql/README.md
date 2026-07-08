@@ -24,7 +24,7 @@ python -c "import duckdb; print(duckdb.sql(open('sql/views/01_monthly_occupancy.
 | `dim_employee` | one row per employee — latest known role/community |
 | `dim_date` | one row per calendar day, 2024-01-01 through 2025-12-31 |
 | `fact_resident_day` | one row per resident per calendar day they were an active resident (admit_date ≤ day ≤ discharge_date, or ≤ data as-of date if still resident) |
-| `fact_acuity_snapshot` | periodic snapshot — one row per resident per distinct acuity reading (dated to the last month that reading held) |
+| `fact_acuity_snapshot` | periodic snapshot — one row per resident per distinct acuity reading (dated to the month that reading first appeared), built from Silver's cleaned-but-not-deduped `pcc_residents_history` rather than the canonical deduped table, so a fast transition isn't measured against a dedup-collapsed "last confirmed" date |
 | `fact_lease` | one row per lease |
 | `fact_labor` | one row per shift worked |
 | `fact_incident` | one row per incident |

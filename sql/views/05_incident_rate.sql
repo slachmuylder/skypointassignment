@@ -1,15 +1,19 @@
 -- Incident rate per 100 resident-days, by community and by care level.
 WITH incidents AS (
-    SELECT rd.community_id, rd.care_level, COUNT(*) AS incident_count
+    SELECT rd.community_id,
+      rd.care_level,
+      COUNT(*) AS incident_count
     FROM 'pipeline/data/gold/fact_incident.parquet' i
     JOIN 'pipeline/data/gold/fact_resident_day.parquet' rd
         ON rd.resident_id = i.resident_id AND rd.date = i.incident_date
-    GROUP BY 1, 2
+    GROUP BY rd.community_id, rd.care_level
 ),
 resident_days AS (
-    SELECT community_id, care_level, COUNT(*) AS resident_days
+    SELECT community_id,
+    care_level,
+    COUNT(*) AS resident_days
     FROM 'pipeline/data/gold/fact_resident_day.parquet'
-    GROUP BY 1, 2
+    GROUP BY community_id, care_level
 )
 SELECT
     rd.community_id,

@@ -81,8 +81,11 @@ CREATE OR REPLACE TABLE fact_resident_day (
 );
 
 -- Periodic snapshot fact. Grain: one row per resident per distinct acuity
--- reading (dated to the last month that reading held), since dim_resident
--- only keeps the current value. Needed for the acuity-jump alert view.
+-- reading (dated to the month that reading first appeared), since
+-- dim_resident only keeps the current value. Built from Silver's cleaned-
+-- but-not-deduped pcc_residents_history so a fast transition isn't measured
+-- against a dedup-collapsed "last confirmed" date. Needed for the
+-- acuity-jump alert view.
 CREATE OR REPLACE TABLE fact_acuity_snapshot (
     resident_id    VARCHAR REFERENCES dim_resident(resident_id),
     snapshot_date  DATE,
