@@ -84,11 +84,11 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
     was for that whole pre-history period, so it's used here to seed one
     additional opening version (admit_date -> first change_date) rather than
     leaving that period with no SCD2 row at all (which would otherwise surface
-    as an unexplained NULL care_level_key in fact_resident_day for every
+    as an unexplained NULL resident_care_level_key in fact_resident_day for every
     resident who has at least one recorded change event).
 
     Each SCD2 version -- not each resident -- gets its own surrogate key
-    (care_level_key), since this table's grain is resident x time-period,
+    (resident_care_level_key), since this table's grain is resident x time-period,
     not resident alone; a resident who changed care level has multiple valid
     rows and therefore multiple keys."""
     events = care_history.dropna(subset=["change_date"]).sort_values([RESIDENT_ID, "change_date"])
@@ -142,7 +142,7 @@ def build_dim_resident_care_level_scd2(residents: pd.DataFrame, care_history: pd
         )
 
     dim = pd.DataFrame(rows)
-    return _assign_surrogate_key(dim, [RESIDENT_ID, "effective_date"], "care_level_key")
+    return _assign_surrogate_key(dim, [RESIDENT_ID, "effective_date"], "resident_care_level_key")
 
 
 def build_dim_unit(units: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
@@ -189,9 +189,9 @@ def build_fact_resident_day(
     Built as a single vectorized DuckDB query (spine of resident x day via
     generate_series, joined to the SCD2 care-level range) -- a row-by-row
     Python loop over ~800k resident-days took 2+ minutes; this takes under a
-    second. resident_key/community_key/care_level_key are resolved by
+    second. resident_key/community_key/resident_care_level_key are resolved by
     joining the query's output back to the already-keyed dimensions --
-    care_level_key comes directly out of the range join against
+    resident_care_level_key comes directly out of the range join against
     care_level_scd (which already has its surrogate key assigned by the time
     this runs)."""
     import duckdb
@@ -212,7 +212,7 @@ def build_fact_resident_day(
             c.resident_id,
             c.community_id,
             CAST(d.date AS VARCHAR) AS date,
-            scd.care_level_key
+            scd.resident_care_level_key
         FROM current c
         CROSS JOIN LATERAL UNNEST(
             generate_series(c.admit_date::DATE, c.stop_date::DATE, INTERVAL 1 DAY)
@@ -226,7 +226,7 @@ def build_fact_resident_day(
 
     spine = spine.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
     spine = spine.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
-    return spine[["resident_key", "community_key", "date", "care_level_key"]]
+    return spine[["resident_key", "community_key", "date", "resident_care_level_key"]]
 
 
 def build_fact_acuity_snapshot(residents_history: pd.DataFrame, dim_resident: pd.DataFrame) -> pd.DataFrame:

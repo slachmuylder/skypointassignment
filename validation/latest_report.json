@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-08T17:49:26.966937+00:00",
-  "pipeline_run_at": "2026-07-08T17:46:37.627745+00:00",
+  "generated_at": "2026-07-08T18:05:24.699170+00:00",
+  "pipeline_run_at": "2026-07-08T18:05:22.771073+00:00",
   "checks_run": 49,
   "checks_passed": 49,
   "checks_failed": 0,
@@ -331,7 +331,7 @@
       "action": "n/a"
     },
     {
-      "check": "referential_integrity[fact_resident_day.care_level_key]",
+      "check": "referential_integrity[fact_resident_day.resident_care_level_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -358,7 +358,7 @@
       "action": "n/a"
     },
     {
-      "check": "primary_key_uniqueness[dim_resident_care_level.care_level_key]",
+      "check": "primary_key_uniqueness[dim_resident_care_level.resident_care_level_key]",
       "status": "pass",
       "detail": {
         "duplicate_count": 0

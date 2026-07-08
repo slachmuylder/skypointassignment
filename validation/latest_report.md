@@ -1,6 +1,6 @@
 # Pinewood Data Refresh — Validation Summary
 
-Generated 2026-07-08T17:49:26.966937+00:00 UTC · based on the pipeline run at 2026-07-08T17:46:37.627745+00:00 UTC
+Generated 2026-07-08T18:05:24.699170+00:00 UTC · based on the pipeline run at 2026-07-08T18:05:22.771073+00:00 UTC
 
 ### ✅ Safe to approve — all 49 accuracy and completeness checks passed.
 
@@ -62,10 +62,10 @@ Generated 2026-07-08T17:49:26.966937+00:00 UTC · based on the pipeline run at 2
 | referential_integrity[fact_lease.unit_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_labor.employee_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | referential_integrity[fact_incident.reported_by_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
-| referential_integrity[fact_resident_day.care_level_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
+| referential_integrity[fact_resident_day.resident_care_level_key] | PASS | n/a | n/a | `{"orphan_rows": 0}` |
 | primary_key_uniqueness[dim_community.community_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_resident.resident_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
-| primary_key_uniqueness[dim_resident_care_level.care_level_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
+| primary_key_uniqueness[dim_resident_care_level.resident_care_level_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_unit.unit_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[dim_employee.employee_key] | PASS | n/a | n/a | `{"duplicate_count": 0}` |
 | primary_key_uniqueness[fact_lease.lease_id] | PASS | n/a | n/a | `{"duplicate_count": 0}` |

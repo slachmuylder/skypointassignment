@@ -234,7 +234,7 @@ def referential_integrity() -> list[dict]:
     dim_resident_keys = set(_read(GOLD_DIR, "dim_resident")["resident_key"])
     dim_unit_keys = set(_read(GOLD_DIR, "dim_unit")["unit_key"])
     dim_employee_keys = set(_read(GOLD_DIR, "dim_employee")["employee_key"])
-    dim_care_level_keys = set(_read(GOLD_DIR, "dim_resident_care_level")["care_level_key"])
+    dim_resident_care_level_keys = set(_read(GOLD_DIR, "dim_resident_care_level")["resident_care_level_key"])
 
     fk_checks = [
         ("fact_lease", "community_key", dim_community_keys),
@@ -252,7 +252,7 @@ def referential_integrity() -> list[dict]:
         ("fact_lease", "unit_key", dim_unit_keys),
         ("fact_labor", "employee_key", dim_employee_keys),
         ("fact_incident", "reported_by_key", dim_employee_keys),
-        ("fact_resident_day", "care_level_key", dim_care_level_keys),
+        ("fact_resident_day", "resident_care_level_key", dim_resident_care_level_keys),
     ]
     for table, col, valid_keys in fk_checks:
         df = _read(GOLD_DIR, table)
@@ -277,7 +277,7 @@ def primary_key_uniqueness() -> list[dict]:
     pk_map: dict[str, str | list[str]] = {
         "dim_community": "community_key",
         "dim_resident": "resident_key",
-        "dim_resident_care_level": "care_level_key",
+        "dim_resident_care_level": "resident_care_level_key",
         "dim_unit": "unit_key",
         "dim_employee": "employee_key",
         "fact_lease": "lease_id",

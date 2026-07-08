@@ -50,7 +50,7 @@ CREATE OR REPLACE TABLE dim_resident (
 -- own surrogate key (not each resident), since this table's grain is
 -- resident x time-period.
 CREATE OR REPLACE TABLE dim_resident_care_level (
-    care_level_key  BIGINT PRIMARY KEY,   -- surrogate key, one per SCD2 version
+    resident_care_level_key  BIGINT PRIMARY KEY,   -- surrogate key, one per SCD2 version
     resident_id     VARCHAR NOT NULL,     -- natural key
     care_level      VARCHAR NOT NULL,     -- IL / AL / MC (canonicalized)
     effective_date  DATE NOT NULL,
@@ -93,7 +93,7 @@ CREATE OR REPLACE TABLE fact_resident_day (
     resident_key    BIGINT REFERENCES dim_resident(resident_key),
     community_key   BIGINT REFERENCES dim_community(community_key),
     date            DATE REFERENCES dim_date(date),
-    care_level_key  BIGINT REFERENCES dim_resident_care_level(care_level_key),  -- as of this day; see sql/README.md on the opening-balance version that covers pre-first-event days
+    resident_care_level_key  BIGINT REFERENCES dim_resident_care_level(resident_care_level_key),  -- as of this day; see sql/README.md on the opening-balance version that covers pre-first-event days
     PRIMARY KEY (resident_key, date)
 );
 

@@ -1,7 +1,7 @@
 # Pipeline Run Report
 
-Run at: 2026-07-08T17:46:37.627745+00:00 UTC  
-Duration: 1.6s
+Run at: 2026-07-08T18:05:22.771073+00:00 UTC  
+Duration: 1.51s
 
 ## Bronze (incremental ingestion)
 

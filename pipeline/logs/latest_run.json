@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-07-08T17:46:37.627745+00:00",
+  "run_at": "2026-07-08T18:05:22.771073+00:00",
   "bronze": {
     "pcc_residents": {
       "files_processed": 0,
@@ -231,5 +231,5 @@
       "action": "quarantine"
     }
   ],
-  "duration_seconds": 1.6
+  "duration_seconds": 1.51
 }
