@@ -1,7 +1,7 @@
 # Pipeline Run Report
 
-Run at: 2026-07-07T21:10:46.965796+00:00 UTC  
-Duration: 1.68s
+Run at: 2026-07-08T02:42:54.366604+00:00 UTC  
+Duration: 1.67s
 
 ## Bronze (incremental ingestion)
 
@@ -49,9 +49,15 @@ Duration: 1.68s
 
 ## Anomalies detected this run
 
-| Table | Reason | Rows affected | Severity | Action |
-|---|---|---|---|---|
-| pcc_residents | acuity_score_out_of_range | 3 | medium | quarantine |
-| pcc_residents | future_dated_discharge | 2 | medium | quarantine |
-| yardi_units | unknown_community_id | 30 | medium | quarantine |
-| hubspot_leads | duplicate_lead_id_conflicting_data | 2 | medium | quarantine |
+| Table | Reason | Source file | Rows affected | Severity | Action |
+|---|---|---|---|---|---|
+| pcc_residents | acuity_score_out_of_range | pcc_residents_2025_06.csv | 3 | medium | quarantine |
+| pcc_residents | future_dated_discharge | pcc_residents_2025_06.csv | 2 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_01.csv | 5 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_02.csv | 5 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_03.csv | 5 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_04.csv | 5 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_05.csv | 5 | medium | quarantine |
+| yardi_units | unknown_community_id | yardi_units_2025_06.csv | 5 | medium | quarantine |
+| hubspot_leads | duplicate_lead_id_conflicting_data | hubspot_leads_2025_03.csv | 1 | medium | quarantine |
+| hubspot_leads | duplicate_lead_id_conflicting_data | hubspot_leads_2025_06.csv | 1 | medium | quarantine |

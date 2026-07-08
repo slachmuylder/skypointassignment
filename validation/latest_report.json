@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-07T21:10:49.141550+00:00",
-  "pipeline_run_at": "2026-07-07T21:10:46.965796+00:00",
+  "generated_at": "2026-07-08T02:42:56.520585+00:00",
+  "pipeline_run_at": "2026-07-08T02:42:54.366604+00:00",
   "checks_run": 37,
   "checks_passed": 37,
   "checks_failed": 0,
@@ -371,6 +371,7 @@
     {
       "table": "pcc_residents",
       "reason": "acuity_score_out_of_range",
+      "source_file": "pcc_residents_2025_06.csv",
       "rows_affected": 3,
       "severity": "medium",
       "action": "quarantine"
@@ -378,6 +379,7 @@
     {
       "table": "pcc_residents",
       "reason": "future_dated_discharge",
+      "source_file": "pcc_residents_2025_06.csv",
       "rows_affected": 2,
       "severity": "medium",
       "action": "quarantine"
@@ -385,14 +387,64 @@
     {
       "table": "yardi_units",
       "reason": "unknown_community_id",
-      "rows_affected": 30,
+      "source_file": "yardi_units_2025_01.csv",
+      "rows_affected": 5,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "source_file": "yardi_units_2025_02.csv",
+      "rows_affected": 5,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "source_file": "yardi_units_2025_03.csv",
+      "rows_affected": 5,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "source_file": "yardi_units_2025_04.csv",
+      "rows_affected": 5,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "source_file": "yardi_units_2025_05.csv",
+      "rows_affected": 5,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "yardi_units",
+      "reason": "unknown_community_id",
+      "source_file": "yardi_units_2025_06.csv",
+      "rows_affected": 5,
       "severity": "medium",
       "action": "quarantine"
     },
     {
       "table": "hubspot_leads",
       "reason": "duplicate_lead_id_conflicting_data",
-      "rows_affected": 2,
+      "source_file": "hubspot_leads_2025_03.csv",
+      "rows_affected": 1,
+      "severity": "medium",
+      "action": "quarantine"
+    },
+    {
+      "table": "hubspot_leads",
+      "reason": "duplicate_lead_id_conflicting_data",
+      "source_file": "hubspot_leads_2025_06.csv",
+      "rows_affected": 1,
       "severity": "medium",
       "action": "quarantine"
     }

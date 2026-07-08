@@ -84,11 +84,12 @@ def run() -> dict:
         if not rejects.empty:
             (SILVER_DIR / "rejects").mkdir(parents=True, exist_ok=True)
             rejects.to_parquet(SILVER_DIR / "rejects" / f"{table}.parquet", index=False)
-            for reason, count in rejects["reject_reason"].value_counts().items():
+            for (reason, source_file), count in rejects.groupby(["reject_reason", "_source_file"]).size().items():
                 log["anomalies"].append(
                     {
                         "table": table,
                         "reason": reason,
+                        "source_file": source_file,
                         "rows_affected": int(count),
                         "severity": "high" if reason == "unresolvable_hourly_rate" else "medium",
                         "action": "quarantine",
@@ -98,12 +99,6 @@ def run() -> dict:
         log["silver"][table] = {
             "rows_in": rows_in,
             "rows_out": len(clean_df),
-            # rows_dropped: removed from the dataset entirely (structural problems,
-            # e.g. unknown_community_id). rows_flagged: total rows with an anomaly
-            # noted in rejects/, which can be larger than rows_dropped since some
-            # anomalies (bad acuity_score, future-dated discharge) are handled by
-            # nulling just the offending field rather than dropping the resident --
-            # see pipeline/silver.py::clean_pcc_residents.
             "rows_dropped": rows_in - len(clean_df),
             "rows_flagged": len(rejects),
         }
@@ -168,10 +163,13 @@ def _write_markdown_log(log: dict) -> None:
 
     lines += ["", "## Anomalies detected this run", ""]
     if log["anomalies"]:
-        lines.append("| Table | Reason | Rows affected | Severity | Action |")
-        lines.append("|---|---|---|---|---|")
+        lines.append("| Table | Reason | Source file | Rows affected | Severity | Action |")
+        lines.append("|---|---|---|---|---|---|")
         for a in log["anomalies"]:
-            lines.append(f"| {a['table']} | {a['reason']} | {a['rows_affected']} | {a['severity']} | {a['action']} |")
+            lines.append(
+                f"| {a['table']} | {a['reason']} | {a.get('source_file', 'n/a')} | "
+                f"{a['rows_affected']} | {a['severity']} | {a['action']} |"
+            )
     else:
         lines.append("No anomalies detected this run.")
 
