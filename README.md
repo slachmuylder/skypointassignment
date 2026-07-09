@@ -95,17 +95,11 @@ history).
   No source file links a community to a state — confirmed by inspecting
   every CSV's columns — so communities are split evenly across
   Oregon/Arizona/Texas in `community_id` order (C001–005 → OR, C006–010 →
-  AZ, C011–014 → TX). This is the first thing to correct once real mapping
-  data is available (see the [email to Pinewood IT](communication/email-to-it.md)).
+  AZ, C011–014 → TX). 
 - **"As of" date is derived from the data, not wall-clock time**
   (`pipeline/config.py::data_as_of_date`). Using the real current date
   for "is this resident still active" logic would extend every still-active
   resident's day-level fact rows years past the actual data.
-- **Trailing-12-month views** (`sql/views/02`, `03`, and the `/move-outs/reasons`
-  endpoint's `period` param) compute their window relative to the latest
-  date actually present in the relevant fact table, not wall-clock today —
-  with only 6 months of data, this means the window captures the whole
-  export, which is the correct behavior once more months land.
 
 ## Anomalies found and how they were handled
 
@@ -116,51 +110,32 @@ history).
    code (`pipeline/config.py::CARE_LEVEL_MAP`) before any deduping or
    comparison happens.
 
-2. **Non-monotonic schema drift.** `pcc_residents_2025_04.csv` has an extra
-   `mobility_status` column absent from every other month, including the
-   ones *after* April. **Handled:** Bronze concatenates files by column
+2. **Non-monotonic schema drift.** Bronze concatenates files by column
    union (pandas `concat(sort=False)`), so an extra or missing column in any
    single month never breaks ingestion — no code change needed when this
    happens again.
 
-3. **Out-of-range acuity scores.** Values like `50`, `-5`, `99` where the
-   valid range is 1–10. **Handled:** the specific field is nulled (not the
-   whole resident record — see Design notes above) and logged as an anomaly
-   with severity `medium`, action `quarantine`.
+3. **Out-of-range acuity scores.** Specific field is nulled and logged as 
+   an anomaly with severity `medium`, action `quarantine`.
 
 4. **Corrupted `hourly_rate` in `adp_shifts`.** Instead of a scalar, the
    column holds a stringified Python dict of *every* role's rate for that
    employee (e.g. `"{'Caregiver': 16, 'Med Tech': 21, ...}"`), identical
-   across all of that employee's shifts in a month. **Handled:** parsed with
+   across all of that employee's shifts in a month. Parsed with
    `ast.literal_eval` and the correct rate is looked up by the row's own
    `role` (`pipeline/silver.py::_resolve_hourly_rate`). Rows where this
    fails to resolve are quarantined as `high` severity.
 
-5. **Phantom community IDs.** `yardi_units` includes units in `C905`,
-   `C934`, `C936`, `C951`, `C969` — none of which exist anywhere else in the
-   dataset (valid range is `C001`–`C014`). **Handled:** quarantined at
-   Silver; never reach Gold.
+5. **Phantom community IDs.** `Quarantined at Silver; never reach Gold.
 
-6. **Mixed date formats.** `dob`, `admit_date`, `discharge_date` in
-   `pcc_residents` mix `YYYY-MM-DD` and `MM/DD/YYYY` — including for the
-   *same resident* across different monthly files. This one mattered more
-   than it looks: deduping on raw strings before normalizing would treat
-   `"03/19/2024"` and `"2024-03-19"` as different states and fail to
-   collapse a resident's unchanged month-to-month snapshot. **Handled:**
-   normalize with `pd.to_datetime(..., format="mixed")` *before* deduping,
-   not after.
+6. **Mixed date formats.** Normalize with `pd.to_datetime(..., format="mixed")` 
+   *before* deduping, not after.
 
-7. **Duplicate `lead_id` with conflicting data.** `HL385264` appears twice
-   in `hubspot_leads` with a different community, source, and status (one
-   `Lost`, one `Won`) — a genuine ID collision, not a re-export of the same
-   record. **Handled:** detected before the generic re-ingestion dedup step
-   (which would have silently kept whichever row happened to sort last) and
+7. **Duplicate `lead_id` with conflicting data.** Detected before the generic re-ingestion 
+   dedup step (which would have silently kept whichever row happened to sort last) and
    quarantined both conflicting rows as `medium` severity.
 
-8. **Future-dated discharge events.** Two residents carry a `discharge_date`
-   over a year past the end of the 6-month export (e.g. `2026-09-17`) — a
-   genuine future-dated event relative to the data itself, not just to
-   whenever the pipeline happens to run. **Handled:** field nulled (resident
+8. **Future-dated discharge events.** Field nulled (resident
    treated as still active) and logged, `medium` severity.
 
 
