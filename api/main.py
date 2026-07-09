@@ -9,18 +9,15 @@ passing a community_id or region outside what their token grants gets a 403,
 never a silently-filtered response.
 """
 from fastapi import Depends, FastAPI
-
 from api.auth import get_claims
 from api.scope import resolve_communities
 from api import queries
 
 app = FastAPI(title="Pinewood Gold API", version="1.0")
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.get("/occupancy")
 def get_occupancy(

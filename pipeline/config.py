@@ -1,12 +1,7 @@
 """Shared paths and reference data for the Pinewood pipeline.
-
-Community-to-state mapping is not present anywhere in the source data (confirmed
-by inspection of every CSV's columns) so it is hard-coded here as a documented
-assumption -- see README.md "Assumptions" section.
 """
 import re
 from pathlib import Path
-
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -25,10 +20,7 @@ def _source_months() -> set[tuple[int, int]]:
 def data_as_of_date() -> str:
     """Last day of the most recent YYYY_MM month present in the raw source
     files. Used as the cutoff for 'still active as of today' logic instead
-    of the real wall-clock date -- the dataset is a fixed 6-month historical
-    export (2025-01 through 2025-06 at the time this was built), so using
-    actual today() would extend every still-active resident's fact_resident_day
-    rows years past the end of the real data."""
+    of the real wall-clock date. Use for validating of dates """
     year, month = max(_source_months())
     next_month = pd.Timestamp(year=year, month=month, day=1) + pd.DateOffset(months=1)
     return (next_month - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
@@ -71,7 +63,7 @@ SOURCE_TABLES = {
 }
 
 # The 14 real Pinewood communities. Anything outside this set found in the raw
-# data (e.g. C905/C934/C936/C951/C969 in yardi_units) is a phantom record that
+# data is a phantom record that
 # gets quarantined rather than joined into Gold.
 VALID_COMMUNITY_IDS = {f"C{i:03d}" for i in range(1, 15)}
 

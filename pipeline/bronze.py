@@ -2,9 +2,7 @@
 """
 import datetime as dt
 from pathlib import Path
-
 import pandas as pd
-
 from pipeline.config import BRONZE_DIR, RAW_DATA_DIR, SOURCE_TABLES
 
 
@@ -36,8 +34,7 @@ def run_bronze(files_to_process: dict[str, list[Path]]) -> dict:
 
 
 def discover_source_files() -> dict[str, list[Path]]:
-    """Files are stored with YYYY_MM in the filename, so we can discover the 
-    reporting window by inspection of the filenames. Returns a sorted dict
+    """Files are stored with YYYY_MM in the filename. Returns a sorted dict
     of files available"""
     result = {}
     for table, pattern in SOURCE_TABLES.items():

@@ -21,7 +21,7 @@ WITH pairs AS (
 )
 SELECT
     r.resident_id,
-    r.community_id,
+    c.community_id,
     r.first_name,
     r.last_name,
     p.from_date,
@@ -31,6 +31,7 @@ SELECT
     p.score_increase
 FROM pairs p
 JOIN 'pipeline/data/gold/dim_resident.parquet' r USING (resident_key)
+JOIN 'pipeline/data/gold/dim_community.parquet' c USING (community_key)
 -- Keep only the single largest-jump window per resident so each candidate
 -- appears once in the review list.
 QUALIFY ROW_NUMBER() OVER (PARTITION BY p.resident_key ORDER BY p.score_increase DESC, p.to_date) = 1

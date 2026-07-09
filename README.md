@@ -3,11 +3,10 @@
 Software Development Engineer take-home for Skypoint Cloud. Builds the
 minimum viable version of Pinewood's occupancy/revenue/labor/care-quality
 platform: a Python ingestion pipeline (Bronze/Silver/Gold), a star-schema SQL
-layer, a FastAPI service with role-based access, a validation framework, and
-the two client-communication writeups. Power BI (`.pbix`) is not included in
-this repo — see [`/powerbi/README.md`](powerbi/README.md).
+layer, a FastAPI service with role-based access, a validation framework, a PowerBI report and
+the two client-communication writeups. 
 
-**Walkthrough video:** [link TBD]
+**Walkthrough video:** https://www.loom.com/share/653c0061ed3242919af60fd103001e8f
 
 ## Setup (fresh machine)
 
@@ -53,7 +52,7 @@ history).
 /pipeline          Python ingestion: bronze.py, silver.py, gold.py, run.py, state.py
 /sql               DDL for the star schema + the 6 required analytical views
 /api               FastAPI service: auth.py (JWT), scope.py (RBAC), queries.py, main.py
-/powerbi           Not built here — see powerbi/README.md
+/powerbi           skypointdemo.pbix
 /validation        checks.py + run.py; latest_report.md is the COO-readable output
 /communication     email-to-it.md, incident-response.md
 /tests             pytest suite for the API's auth/RBAC behavior
@@ -99,8 +98,7 @@ history).
   AZ, C011–014 → TX). This is the first thing to correct once real mapping
   data is available (see the [email to Pinewood IT](communication/email-to-it.md)).
 - **"As of" date is derived from the data, not wall-clock time**
-  (`pipeline/config.py::data_as_of_date`). The export is a fixed 6-month
-  historical window (2025-01 through 2025-06); using the real current date
+  (`pipeline/config.py::data_as_of_date`). Using the real current date
   for "is this resident still active" logic would extend every still-active
   resident's day-level fact rows years past the actual data.
 - **Trailing-12-month views** (`sql/views/02`, `03`, and the `/move-outs/reasons`
@@ -108,9 +106,6 @@ history).
   date actually present in the relevant fact table, not wall-clock today —
   with only 6 months of data, this means the window captures the whole
   export, which is the correct behavior once more months land.
-- **Resident identity is reconciled across PCC and Yardi via a direct
-  `resident_id` match** — confirmed the two systems share the same ID
-  space rather than needing fuzzy/name-based matching.
 
 ## Anomalies found and how they were handled
 
@@ -168,13 +163,6 @@ history).
    whenever the pipeline happens to run. **Handled:** field nulled (resident
    treated as still active) and logged, `medium` severity.
 
-Ruled out as *not* anomalies after investigation (documented here since they
-looked suspicious at first glance): duplicate-looking rows in `yardi_leases`
-turned out to be the same `lease_id` legitimately re-exported across two
-monthly files per the data dictionary (created in one month, move-out
-recorded in another) — not overlapping leases. The `no_overlapping_leases`
-business-rule check in `/validation` confirms zero real violations once that
-dedup is applied correctly.
 
 ## Running the validation report
 

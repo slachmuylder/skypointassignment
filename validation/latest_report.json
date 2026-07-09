@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-08T18:05:24.699170+00:00",
-  "pipeline_run_at": "2026-07-08T18:05:22.771073+00:00",
+  "generated_at": "2026-07-08T22:53:09.342796+00:00",
+  "pipeline_run_at": "2026-07-08T22:45:50.307684+00:00",
   "checks_run": 49,
   "checks_passed": 49,
   "checks_failed": 0,
@@ -9,10 +9,10 @@
       "check": "row_count_reconciliation[pcc_residents]",
       "status": "pass",
       "detail": {
-        "rows_in": 4152,
-        "rows_dropped": 3326,
-        "expected_out": 826,
-        "actual_out": 826
+        "rows_in": 4921,
+        "rows_dropped": 4092,
+        "expected_out": 829,
+        "actual_out": 829
       },
       "severity": "n/a",
       "action": "n/a"
@@ -125,8 +125,8 @@
       "check": "aggregate_reconciliation[total_resident_days]",
       "status": "pass",
       "detail": {
-        "expected_from_dim_resident": 543015,
-        "actual_in_fact_resident_day": 543015
+        "expected_from_dim_resident": 566172,
+        "actual_in_fact_resident_day": 566172
       },
       "severity": "n/a",
       "action": "n/a"
@@ -163,7 +163,7 @@
       "status": "pass",
       "detail": {
         "violations_by_column": {},
-        "as_of_date": "2025-06-30"
+        "as_of_date": "2025-07-31"
       },
       "severity": "n/a",
       "action": "n/a"
@@ -268,6 +268,15 @@
       "action": "n/a"
     },
     {
+      "check": "referential_integrity[dim_resident.community_key]",
+      "status": "pass",
+      "detail": {
+        "orphan_rows": 0
+      },
+      "severity": "n/a",
+      "action": "n/a"
+    },
+    {
       "check": "referential_integrity[fact_lease.resident_key]",
       "status": "pass",
       "detail": {
@@ -314,15 +323,6 @@
     },
     {
       "check": "referential_integrity[fact_labor.employee_key]",
-      "status": "pass",
-      "detail": {
-        "orphan_rows": 0
-      },
-      "severity": "n/a",
-      "action": "n/a"
-    },
-    {
-      "check": "referential_integrity[fact_incident.reported_by_key]",
       "status": "pass",
       "detail": {
         "orphan_rows": 0
@@ -479,7 +479,7 @@
     {
       "table": "pcc_residents",
       "reason": "acuity_score_out_of_range",
-      "source_file": "pcc_residents_2025_06.csv",
+      "source_file": "pcc_residents_2025_07.csv",
       "rows_affected": 3,
       "severity": "medium",
       "action": "quarantine"
@@ -487,7 +487,7 @@
     {
       "table": "pcc_residents",
       "reason": "future_dated_discharge",
-      "source_file": "pcc_residents_2025_06.csv",
+      "source_file": "pcc_residents_2025_07.csv",
       "rows_affected": 2,
       "severity": "medium",
       "action": "quarantine"

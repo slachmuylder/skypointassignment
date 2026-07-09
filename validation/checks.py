@@ -2,7 +2,6 @@
 verdict plus enough detail to act on it -- these get assembled into the
 report by validation/run.py."""
 import pandas as pd
-
 from pipeline.config import ACUITY_MAX, ACUITY_MIN, GOLD_DIR, SILVER_DIR, data_as_of_date
 
 
@@ -226,9 +225,10 @@ def referential_integrity() -> list[dict]:
     """Every fact's surrogate-key foreign columns must resolve to a real row
     in the dimension they reference. NULL is excluded from the check itself
     (it means "no relationship", a different thing from "an invalid
-    reference") -- fact_incident.reported_by_key is the one column that's
-    always entirely NULL, a confirmed anomaly documented in
-    pipeline/gold.py::build_fact_incident, not a referential-integrity bug."""
+    reference"). fact_incident.reported_by is intentionally NOT checked here
+    -- it's PCC's raw, unresolved staff ID, not a dim_employee FK, since
+    PCC's and ADP's employee-ID systems are confirmed disjoint (see
+    pipeline/gold.py::build_fact_incident)."""
     results = []
     dim_community_keys = set(_read(GOLD_DIR, "dim_community")["community_key"])
     dim_resident_keys = set(_read(GOLD_DIR, "dim_resident")["resident_key"])
@@ -245,13 +245,13 @@ def referential_integrity() -> list[dict]:
         ("fact_resident_day", "community_key", dim_community_keys),
         ("dim_unit", "community_key", dim_community_keys),
         ("dim_employee", "latest_community_key", dim_community_keys),
+        ("dim_resident", "community_key", dim_community_keys),
         ("fact_lease", "resident_key", dim_resident_keys),
         ("fact_incident", "resident_key", dim_resident_keys),
         ("fact_resident_day", "resident_key", dim_resident_keys),
         ("fact_acuity_snapshot", "resident_key", dim_resident_keys),
         ("fact_lease", "unit_key", dim_unit_keys),
         ("fact_labor", "employee_key", dim_employee_keys),
-        ("fact_incident", "reported_by_key", dim_employee_keys),
         ("fact_resident_day", "resident_care_level_key", dim_resident_care_level_keys),
     ]
     for table, col, valid_keys in fk_checks:

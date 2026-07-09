@@ -1,21 +1,13 @@
 -- Incident rate per 100 resident-days, by community and by care level.
---
--- Resolves resident_care_level_key to the actual care_level TEXT (IL/AL/MC) before
--- grouping, rather than grouping by resident_care_level_key directly. This matters:
--- dim_resident_care_level's grain is resident x time-period, so two
--- different residents who are both currently AL have two DIFFERENT
--- resident_care_level_key values (one per SCD2 version) even though they share the
--- same category -- grouping by the key itself would fragment "AL" into as
--- many groups as there are residents/versions, instead of one AL bucket.
 WITH resident_day_with_level AS (
+    -- add care_level to daily row to have 1 row per day, resident, care_level
     SELECT rd.community_key, rd.resident_key, rd.date, cl.care_level
     FROM 'pipeline/data/gold/fact_resident_day.parquet' rd
-    -- resident_care_level_key can be NULL (documented gap, see sql/README.md), in
-    -- which case this LEFT JOIN correctly leaves care_level NULL too rather
-    -- than dropping the row.
+    -- resident_care_level_key can be NULL
     LEFT JOIN 'pipeline/data/gold/dim_resident_care_level.parquet' cl USING (resident_care_level_key)
 ),
 incidents AS (
+    -- build incident count by community and care level
     SELECT rdw.community_key, rdw.care_level, COUNT(*) AS incident_count
     FROM 'pipeline/data/gold/fact_incident.parquet' i
     JOIN resident_day_with_level rdw
@@ -23,6 +15,7 @@ incidents AS (
     GROUP BY rdw.community_key, rdw.care_level
 ),
 resident_days AS (
+    -- build resident days by community and care level
     SELECT community_key, care_level, COUNT(*) AS resident_days
     FROM resident_day_with_level
     GROUP BY community_key, care_level

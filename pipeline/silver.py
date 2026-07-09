@@ -92,16 +92,8 @@ def clean_pcc_residents(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 def clean_pcc_residents_history(df: pd.DataFrame) -> pd.DataFrame:
     """Cleaned but NOT deduped -- every month's row survives (after the same
     per-row normalization as clean_pcc_residents), so a resident's true
-    reading-by-reading history is preserved. The canonical clean_pcc_residents
-    output collapses repeated monthly snapshots down to one row per distinct
-    state, which is exactly what dim_resident/fact_resident_day want (a
-    single "current" row per resident) -- but it means a value's recorded
-    date is when it was *last* confirmed before changing, not when it first
-    appeared. For fact_acuity_snapshot (pipeline/gold.py), that difference
-    matters: it can make a real change look like it took longer than it did,
-    understating whether a jump happened within the 90-day window the
-    assessment asks about. This table exists so Gold can build that history
-    from clean, honest per-month data instead.
+    reading-by-reading history is preserved. This table exists so Gold 
+    can build that history.
 
     Same acuity/community/discharge validity filtering as the canonical
     table is applied (so a garbage reading doesn't corrupt the history), but

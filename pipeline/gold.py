@@ -1,31 +1,14 @@
 """Gold layer: star-schema mart tables built from Silver.
 
-Grain of each table is documented in sql/README.md -- this module is the
-Python-side implementation of that same design (SCD2 for care level, the
-resident-day fact that the required occupancy/labor/incident views are all
-built from, etc). Output is one Parquet file per dimension/fact table.
-
-Every dimension (except dim_date, whose natural key -- the date itself --
-is already unique, sortable, and meaningful on its own) gets a numeric
+Every dimension (except dim_date) gets a numeric
 surrogate key as its primary key, with the source system's natural key
 retained as a plain attribute column. Every fact table's foreign keys to
-those dimensions are the surrogate keys, not the natural keys -- a fact
-still carries its OWN natural business key (lease_id, shift_id, incident_id,
-etc.), since that's the fact's own identifier, not a reference to a
-dimension.
+those dimensions are the surrogate keys.
 
 Surrogate keys are recomputed fresh on every Gold rebuild (sorted by natural
-key, then enumerated 1..n) rather than persisted across runs, consistent
-with Gold always doing a full rebuild from Silver rather than an incremental
-one. That's stable in practice for this dataset, since natural keys here are
-already assigned in a stable order (e.g. a new resident_id sorts after all
-existing ones, never in the middle) -- a production system where a new
-natural key could sort before existing ones would need a persisted
-natural-key -> surrogate-key mapping instead, so an existing dimension
-member's key never changes once assigned.
+key, then enumerated 1..n) rather than persisted across runs.
 """
 import pandas as pd
-
 from pipeline.columns import COMMUNITY_ID, RESIDENT_ID
 from pipeline.config import COMMUNITY_STATE, GOLD_DIR, STATE_REGION, VALID_COMMUNITY_IDS, data_as_of_date, data_window
 
@@ -56,14 +39,15 @@ def build_dim_community() -> pd.DataFrame:
     return _assign_surrogate_key(pd.DataFrame(rows), COMMUNITY_ID, "community_key")
 
 
-def build_dim_resident(residents: pd.DataFrame, care_level_scd: pd.DataFrame) -> pd.DataFrame:
+def build_dim_resident(residents: pd.DataFrame, care_level_scd: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:
     current = _latest_per_resident(residents)
     current_level = care_level_scd[care_level_scd["is_current"]][[RESIDENT_ID, "care_level"]]
     dim = current.merge(current_level, on=RESIDENT_ID, how="left", suffixes=("_snapshot", ""))
     dim["care_level"] = dim["care_level"].fillna(dim["care_level_snapshot"])
+    dim = dim.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
     dim = dim[
         [
-            RESIDENT_ID, COMMUNITY_ID, "first_name", "last_name", "dob", "gender",
+            RESIDENT_ID, "community_key", "first_name", "last_name", "dob", "gender",
             "admit_date", "discharge_date", "care_level", "acuity_score",
         ]
     ]
@@ -185,15 +169,7 @@ def build_fact_resident_day(
     (admit_date <= day <= discharge_date, or day <= today if still resident).
     This is the base fact that occupancy, labor-cost-per-resident-day, and
     incident-rate-per-100-resident-days are all computed against.
-
-    Built as a single vectorized DuckDB query (spine of resident x day via
-    generate_series, joined to the SCD2 care-level range) -- a row-by-row
-    Python loop over ~800k resident-days took 2+ minutes; this takes under a
-    second. resident_key/community_key/resident_care_level_key are resolved by
-    joining the query's output back to the already-keyed dimensions --
-    resident_care_level_key comes directly out of the range join against
-    care_level_scd (which already has its surrogate key assigned by the time
-    this runs)."""
+"""
     import duckdb
 
     current = _latest_per_resident(residents)[
@@ -236,21 +212,8 @@ def build_fact_acuity_snapshot(residents_history: pd.DataFrame, dim_resident: pd
 
     dim_resident only keeps each resident's latest (Type-1) acuity_score, so
     it can't answer "did this resident's acuity jump by 2+ points within 90
-    days" -- that requires the history, which is what this table is for.
-    Takes `residents_history` -- the cleaned-but-NOT-deduped companion to
-    Silver's canonical pcc_residents (see
-    pipeline/silver.py::clean_pcc_residents_history).
-
-    Collapsing consecutive identical readings down to just their first (or
-    just their last) occurrence was tried and is deliberately NOT done here:
-    it actively breaks the 90-day-window check. If a resident held a value
-    from January through June and changed in July, keeping only January's
-    "first occurrence" of the old value makes the self-join in
-    sql/views/06_acuity_increase_alerts.sql see a 181-day gap and correctly
-    (per that collapsed view) exclude it -- even though the real gap that
-    matters is June-to-July, 31 days, which should fire. Keeping every
-    month's row lets that self-join find the closest actual qualifying pair
-    on its own, which is what it's already designed to do."""
+    days" .
+    """
     df = residents_history.dropna(subset=["acuity_score"]).copy()
     df["_month"] = df["_source_file"].str.extract(r"(\d{4}_\d{2})")
     df["snapshot_date"] = pd.to_datetime(df["_month"], format="%Y_%m") + pd.offsets.MonthEnd(0)
@@ -276,25 +239,15 @@ def build_fact_labor(shifts: pd.DataFrame, dim_employee: pd.DataFrame, dim_commu
 
 
 def build_fact_incident(incidents: pd.DataFrame, dim_resident: pd.DataFrame, dim_community: pd.DataFrame, dim_employee: pd.DataFrame) -> pd.DataFrame:
-    """Confirmed anomaly, surfaced only by formalizing reported_by as a real
-    FK instead of an unvalidated VARCHAR (the design before this): PCC's
-    pcc_incidents.reported_by IDs are all 4-digit ("E1000"-"E9982") while
-    ADP's adp_shifts.employee_id IDs are all 5-digit ("E10104"-"E99915") --
-    zero overlap, across all 411 incidents and 68,071 shifts, with no
-    exceptions on either side. These are two entirely separate employee-ID
-    systems that were never reconciled between PCC and ADP -- the same class
-    of problem the assessment calls out for *resident* identity between PCC
-    and Yardi, just undocumented here. reported_by_key is left NULL for
-    every row as a result; not something to force-fix without a real
-    cross-system employee mapping Pinewood doesn't have."""
+    """Confirmed anomaly: PCC's pcc_incidents.reported_by IDs are all 4-digit
+    ("E1000"-"E9982") while ADP's adp_shifts.employee_id IDs are all 5-digit
+    ("E10104"-"E99915") -- zero overlap across all 411 incidents / 68,071
+    shifts, with no exceptions on either side. These are two entirely
+    separate employee-ID systems that were never reconciled between PCC and
+    ADP. Original source key left until this inconsistency is resolved"""
     df = incidents.merge(dim_resident[[RESIDENT_ID, "resident_key"]], on=RESIDENT_ID, how="left")
     df = df.merge(dim_community[[COMMUNITY_ID, "community_key"]], on=COMMUNITY_ID, how="left")
-    df = df.merge(
-        dim_employee[["employee_id", "employee_key"]].rename(columns={"employee_id": "reported_by", "employee_key": "reported_by_key"}),
-        on="reported_by", how="left",
-    )
-    df["reported_by_key"] = df["reported_by_key"].astype("Int64")
-    return df[["incident_id", "resident_key", "community_key", "incident_date", "incident_type", "severity", "reported_by_key"]].copy()
+    return df[["incident_id", "resident_key", "community_key", "incident_date", "incident_type", "severity", "reported_by"]].copy()
 
 
 def build_fact_review(reviews: pd.DataFrame, dim_community: pd.DataFrame) -> pd.DataFrame:

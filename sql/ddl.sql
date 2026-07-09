@@ -34,7 +34,7 @@ CREATE OR REPLACE TABLE dim_community (
 CREATE OR REPLACE TABLE dim_resident (
     resident_key    BIGINT PRIMARY KEY,   -- surrogate key
     resident_id     VARCHAR NOT NULL,     -- natural key, PCC's own resident ID
-    community_id    VARCHAR,              -- current community (natural key -- see sql/README.md on why this isn't community_key)
+    community_key   BIGINT REFERENCES dim_community(community_key),   -- outrigger reference to dim_community (current community)
     first_name      VARCHAR,
     last_name       VARCHAR,
     dob             DATE,
@@ -140,9 +140,9 @@ CREATE OR REPLACE TABLE fact_incident (
     incident_date     DATE REFERENCES dim_date(date),
     incident_type     VARCHAR,   -- Fall / Medication Error / Behavioral / Skin Tear / Elopement / Other
     severity          BIGINT,    -- 1-5
-    reported_by_key   BIGINT     -- REFERENCES dim_employee(employee_key), but ALWAYS NULL: PCC's reported_by
-                                  -- IDs and ADP's employee_id IDs are two disjoint ID systems that were
-                                  -- never reconciled -- see pipeline/gold.py::build_fact_incident
+    reported_by       VARCHAR    -- PCC's raw, unresolved staff ID -- NOT a dim_employee FK: PCC's
+                                  -- reported_by IDs and ADP's employee_id IDs are two disjoint ID
+                                  -- systems that were never reconciled -- see pipeline/gold.py::build_fact_incident
 );
 
 -- Grain: one row per review.

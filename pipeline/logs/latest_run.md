@@ -1,13 +1,13 @@
 # Pipeline Run Report
 
-Run at: 2026-07-08T18:05:22.771073+00:00 UTC  
-Duration: 1.51s
+Run at: 2026-07-08T22:45:50.307684+00:00 UTC  
+Duration: 1.63s
 
 ## Bronze (incremental ingestion)
 
 | Table | New files | Revised files (content changed) | Skipped (unchanged) | Rows ingested |
 |---|---|---|---|---|
-| pcc_residents | 0 | 0 | 6 | 0 |
+| pcc_residents | 0 | 0 | 7 | 0 |
 | pcc_incidents | 0 | 0 | 6 | 0 |
 | pcc_care_history | 0 | 0 | 6 | 0 |
 | yardi_units | 0 | 0 | 6 | 0 |
@@ -20,7 +20,7 @@ Duration: 1.51s
 
 | Table | Rows in | Rows out | Rows dropped | Rows flagged |
 |---|---|---|---|---|
-| pcc_residents | 4152 | 826 | 3326 | 5 |
+| pcc_residents | 4921 | 829 | 4092 | 5 |
 | pcc_incidents | 411 | 411 | 0 | 0 |
 | pcc_care_history | 303 | 303 | 0 | 0 |
 | yardi_units | 5490 | 5460 | 30 | 30 |
@@ -38,9 +38,9 @@ Duration: 1.51s
 | dim_resident_care_level | 854 |
 | dim_unit | 910 |
 | dim_employee | 617 |
-| dim_date | 181 |
-| fact_resident_day | 543015 |
-| fact_acuity_snapshot | 4134 |
+| dim_date | 212 |
+| fact_resident_day | 566172 |
+| fact_acuity_snapshot | 4900 |
 | fact_lease | 302 |
 | fact_labor | 68071 |
 | fact_incident | 411 |
@@ -51,8 +51,8 @@ Duration: 1.51s
 
 | Table | Reason | Source file | Rows affected | Severity | Action |
 |---|---|---|---|---|---|
-| pcc_residents | acuity_score_out_of_range | pcc_residents_2025_06.csv | 3 | medium | quarantine |
-| pcc_residents | future_dated_discharge | pcc_residents_2025_06.csv | 2 | medium | quarantine |
+| pcc_residents | acuity_score_out_of_range | pcc_residents_2025_07.csv | 3 | medium | quarantine |
+| pcc_residents | future_dated_discharge | pcc_residents_2025_07.csv | 2 | medium | quarantine |
 | yardi_units | unknown_community_id | yardi_units_2025_01.csv | 5 | medium | quarantine |
 | yardi_units | unknown_community_id | yardi_units_2025_02.csv | 5 | medium | quarantine |
 | yardi_units | unknown_community_id | yardi_units_2025_03.csv | 5 | medium | quarantine |

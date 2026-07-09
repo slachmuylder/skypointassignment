@@ -6,9 +6,7 @@ Usage:
 import datetime as dt
 import json
 import time
-
 import pandas as pd
-
 from pipeline.bronze import discover_source_files, read_bronze_table, run_bronze
 from pipeline.config import LOG_DIR, SILVER_DIR, data_window
 from pipeline.gold import (
@@ -58,8 +56,7 @@ def run() -> dict:
         if file_status[table]["updated"]:
             # A previously-ingested filename came back with different content --
             # a retroactive revision of data that may have already been reported
-            # on, not just a new month landing. Flagged distinctly rather than
-            # silently folded into "processed some files this run".
+            # on, not just a new month landing.
             log["anomalies"].append(
                 {
                     "table": table,
@@ -106,12 +103,7 @@ def run() -> dict:
     # Cleaned-but-not-deduped companion to silver_tables["pcc_residents"]:
     # every month's row survives, so Gold can reconstruct a resident's true
     # reading-by-reading history instead of only their latest state per
-    # distinct value. See pipeline/silver.py::clean_pcc_residents_history.
-    # Not added to log["silver"] -- that dict's shape (rows_in/out/dropped/
-    # flagged) is relied on as-is by _write_markdown_log and
-    # validation/checks.py::row_count_reconciliation; this table's own
-    # anomalies are already covered by silver_tables["pcc_residents"]'s
-    # rejects, so it doesn't need a parallel entry there.
+    # distinct value.
     residents_history = clean_pcc_residents_history(read_bronze_table("pcc_residents"))
     SILVER_DIR.mkdir(parents=True, exist_ok=True)
     residents_history.to_parquet(SILVER_DIR / "pcc_residents_history.parquet", index=False)
@@ -125,7 +117,7 @@ def run() -> dict:
         silver_tables["pcc_residents"], silver_tables["pcc_care_history"]
     )
     dim_community = build_dim_community()
-    dim_resident = build_dim_resident(silver_tables["pcc_residents"], care_level_scd)
+    dim_resident = build_dim_resident(silver_tables["pcc_residents"], care_level_scd, dim_community)
     dim_unit = build_dim_unit(silver_tables["yardi_units"], dim_community)
     dim_employee = build_dim_employee(silver_tables["adp_shifts"], dim_community)
     dim_date = build_dim_date(*data_window())
